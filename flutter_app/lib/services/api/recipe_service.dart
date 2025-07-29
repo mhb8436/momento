@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import '../../models/recipe.dart';
 import '../../config/app_config.dart';
 import 'api_service.dart';
@@ -230,6 +232,47 @@ class RecipeService {
       return RecipeListResult.failure(message: '레시피 검색 중 오류가 발생했습니다: $e');
     }
   }
+
+  Future<ImageUploadResult> uploadRecipeImage(File imageFile) async {
+    try {
+      print('🔍 RecipeService uploadRecipeImage 시작');
+      print('🔍 API URL: ${AppConfig.baseUrl}/uploads/recipe-image');
+      
+      // FormData 생성
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: imageFile.path.split('/').last,
+        ),
+      });
+
+      final response = await _apiService.post(
+        '/uploads/recipe-image',
+        data: formData,
+      );
+
+      print('🔍 이미지 업로드 API 응답: status=${response.statusCode}, data=${response.data}');
+
+      if (response.statusCode == 200) {
+        final imageUrl = response.data['image_url'] as String?;
+        if (imageUrl != null) {
+          return ImageUploadResult.success(imageUrl: imageUrl);
+        } else {
+          return ImageUploadResult.failure(message: '이미지 URL을 받을 수 없습니다.');
+        }
+      } else {
+        final errorMsg = response.data['detail'] ?? '이미지 업로드에 실패했습니다.';
+        print('❌ 이미지 업로드 API 오류 응답: $errorMsg');
+        return ImageUploadResult.failure(message: errorMsg);
+      }
+    } on ApiException catch (e) {
+      print('❌ RecipeService uploadRecipeImage ApiException: ${e.message} (status: ${e.statusCode})');
+      return ImageUploadResult.failure(message: e.message);
+    } catch (e) {
+      print('❌ RecipeService uploadRecipeImage Exception: $e');
+      return ImageUploadResult.failure(message: '이미지 업로드 중 오류가 발생했습니다: $e');
+    }
+  }
 }
 
 // Recipe Service Result Classes
@@ -302,5 +345,30 @@ class RecipeDeleteSuccess extends RecipeDeleteResult {
 
 class RecipeDeleteFailure extends RecipeDeleteResult {
   RecipeDeleteFailure({required String message})
+      : super._(isSuccess: false, message: message);
+}
+
+abstract class ImageUploadResult {
+  final bool isSuccess;
+  final String? message;
+  final String? imageUrl;
+
+  ImageUploadResult._({
+    required this.isSuccess,
+    this.message,
+    this.imageUrl,
+  });
+
+  factory ImageUploadResult.success({required String imageUrl}) = ImageUploadSuccess;
+  factory ImageUploadResult.failure({required String message}) = ImageUploadFailure;
+}
+
+class ImageUploadSuccess extends ImageUploadResult {
+  ImageUploadSuccess({required String imageUrl}) 
+      : super._(isSuccess: true, imageUrl: imageUrl);
+}
+
+class ImageUploadFailure extends ImageUploadResult {
+  ImageUploadFailure({required String message}) 
       : super._(isSuccess: false, message: message);
 }

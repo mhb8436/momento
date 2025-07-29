@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, audio, recipes
+from app.routers import auth, audio, recipes, uploads
 
 app = FastAPI(
     title="MOMENTO API",
@@ -19,6 +19,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/auth", tags=["authentication"])
 app.include_router(audio.router, prefix="/audio", tags=["audio"])
 app.include_router(recipes.router, prefix="/recipes", tags=["recipes"])
+app.include_router(uploads.router)
 
 
 @app.get("/")
