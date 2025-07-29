@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
 import '../../models/recipe.dart';
 import '../../providers/recipe_provider.dart';
@@ -115,14 +116,52 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen>
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(
-                  Icons.restaurant,
-                  color: Colors.white,
-                  size: 36,
-                ),
+                child: widget.recipe.imageUrl != null && widget.recipe.imageUrl!.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: CachedNetworkImage(
+                          imageUrl: widget.recipe.imageUrl!,
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            decoration: BoxDecoration(
+                              gradient: AppTheme.primaryGradient,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            decoration: BoxDecoration(
+                              gradient: AppTheme.primaryGradient,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(
+                              Icons.restaurant,
+                              color: Colors.white,
+                              size: 36,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.primaryGradient,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.restaurant,
+                          color: Colors.white,
+                          size: 36,
+                        ),
+                      ),
               ),
               const SizedBox(width: 16),
               Expanded(

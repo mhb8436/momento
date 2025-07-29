@@ -57,6 +57,8 @@ class Recipe {
   final String? cookingTime;
   final String? difficulty;
   final String? category;
+  @JsonKey(name: 'image_url')
+  final String? imageUrl;
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
   @JsonKey(name: 'updated_at')
@@ -75,6 +77,7 @@ class Recipe {
     this.cookingTime,
     this.difficulty,
     this.category,
+    this.imageUrl,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -115,6 +118,7 @@ class Recipe {
     String? cookingTime,
     String? difficulty,
     String? category,
+    String? imageUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -131,6 +135,7 @@ class Recipe {
       cookingTime: cookingTime ?? this.cookingTime,
       difficulty: difficulty ?? this.difficulty,
       category: category ?? this.category,
+      imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

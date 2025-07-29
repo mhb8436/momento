@@ -34,6 +34,7 @@ class RecipeResponse(BaseModel):
     cooking_time: Optional[str] = None
     difficulty: Optional[str] = None
     category: Optional[str] = None
+    image_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -51,3 +52,4 @@ class RecipeUpdate(BaseModel):
     cooking_time: Optional[str] = None
     difficulty: Optional[str] = None
     category: Optional[str] = None
+    image_url: Optional[str] = None

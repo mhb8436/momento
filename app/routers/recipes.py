@@ -84,6 +84,7 @@ async def create_recipe_from_audio(
             cooking_time=recipe.cooking_time,
             difficulty=recipe.difficulty,
             category=recipe.category,
+            image_url=recipe.image_url,
             created_at=recipe.created_at,
             updated_at=recipe.updated_at
         )
@@ -123,6 +124,7 @@ async def get_user_recipes(
             cooking_time=recipe.cooking_time,
             difficulty=recipe.difficulty,
             category=recipe.category,
+            image_url=recipe.image_url,
             created_at=recipe.created_at,
             updated_at=recipe.updated_at
         )

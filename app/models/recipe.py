@@ -22,6 +22,7 @@ class Recipe(Base):
     cooking_time = Column(String, nullable=True)  # "30분"
     difficulty = Column(String, nullable=True)  # "쉬움", "보통", "어려움"
     category = Column(String, nullable=True)  # "한식", "중식", "양식" 등
+    image_url = Column(String, nullable=True)  # 레시피 이미지 URL
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
