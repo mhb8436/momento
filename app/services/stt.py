@@ -1,10 +1,11 @@
-import openai
+from openai import OpenAI
 from pathlib import Path
 from typing import Optional
 from app.config import settings
 
-# OpenAI 클라이언트 초기화
-client = openai.OpenAI(api_key=settings.openai_api_key)
+# OpenAI 클라이언트 초기화 (lazy initialization)
+def get_openai_client():
+    return OpenAI(api_key=settings.openai_api_key)
 
 
 async def transcribe_audio(file_path: str) -> Optional[str]:
@@ -24,6 +25,7 @@ async def transcribe_audio(file_path: str) -> Optional[str]:
             raise FileNotFoundError(f"Audio file not found: {file_path}")
         
         with open(audio_file_path, "rb") as audio_file:
+            client = get_openai_client()
             transcript = client.audio.transcriptions.create(
                 model="whisper-1",
                 file=audio_file,
