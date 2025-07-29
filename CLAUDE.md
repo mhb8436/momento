@@ -46,7 +46,12 @@ python -m venv venv
 source venv/bin/activate  # Linux/macOS
 pip install -r requirements.txt
 cp .env.example .env
-# Edit .env with your database credentials and API keys
+# Edit .env with your OpenAI API key
+
+# PostgreSQL setup
+brew install postgresql  # if not installed
+brew services start postgresql
+./setup_db.sh  # Creates user and database automatically
 ```
 
 ### Development Server
