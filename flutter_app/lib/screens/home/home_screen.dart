@@ -4,6 +4,10 @@ import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/recipe_provider.dart';
 import '../../widgets/common/custom_icon_button.dart';
+import '../recording/recording_screen.dart';
+import '../recipe/recipe_list_screen.dart';
+import '../audio/audio_list_screen.dart';
+import '../profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -155,7 +159,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   subtitle: '새로운 레시피 기록',
                   gradient: AppTheme.primaryGradient,
                   onTap: () {
-                    // TODO: Navigate to recording screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RecordingScreen(),
+                      ),
+                    );
                   },
                 ),
               ),
@@ -473,21 +482,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRecipesTab() {
-    return const Center(
-      child: Text('레시피 탭 - 구현 예정'),
-    );
+    return const RecipeListScreen();
   }
 
   Widget _buildAudioTab() {
-    return const Center(
-      child: Text('오디오 탭 - 구현 예정'),
-    );
+    return const AudioListScreen();
   }
 
   Widget _buildProfileTab() {
-    return const Center(
-      child: Text('프로필 탭 - 구현 예정'),
-    );
+    return const ProfileScreen();
   }
 
   Widget _buildBottomNavigationBar() {
@@ -567,7 +570,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: FloatingActionButton(
         onPressed: () {
-          // TODO: Navigate to recording screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const RecordingScreen(),
+            ),
+          );
         },
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -596,7 +604,9 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('설정'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to settings
+                setState(() {
+                  _currentIndex = 3; // Navigate to Profile tab where settings are
+                });
               },
             ),
             ListTile(
@@ -604,7 +614,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('도움말'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to help
+                _showHelpDialog();
               },
             ),
             ListTile(
@@ -641,6 +651,75 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              Icons.help_outline,
+              color: AppTheme.primaryColor,
+            ),
+            const SizedBox(width: 8),
+            const Text('도움말'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHelpSection(
+                '음성 녹음하기',
+                '1. 홈 화면의 마이크 버튼을 누르세요\n2. 요리법을 자세히 설명해주세요\n3. 완료 버튼을 눌러 AI 처리를 시작하세요',
+              ),
+              const SizedBox(height: 16),
+              _buildHelpSection(
+                '레시피 관리',
+                '• 레시피 탭에서 저장된 모든 레시피를 확인할 수 있습니다\n• 검색 기능으로 원하는 레시피를 찾을 수 있습니다\n• 레시피를 탭하면 상세 내용을 볼 수 있습니다',
+              ),
+              const SizedBox(height: 16),
+              _buildHelpSection(
+                '오디오 파일',
+                '• 오디오 탭에서 녹음한 파일들을 관리할 수 있습니다\n• 처리 상태를 확인하고 생성된 레시피로 이동할 수 있습니다',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHelpSection(String title, String content) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          content,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppTheme.textSecondary,
+            height: 1.4,
+          ),
+        ),
+      ],
     );
   }
 }

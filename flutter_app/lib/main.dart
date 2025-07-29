@@ -35,8 +35,15 @@ class MomentoApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => AudioProvider()),
         ChangeNotifierProvider(create: (_) => RecipeProvider()),
+        ChangeNotifierProxyProvider<RecipeProvider, AudioProvider>(
+          create: (_) => AudioProvider(),
+          update: (_, recipeProvider, audioProvider) {
+            audioProvider ??= AudioProvider();
+            audioProvider.setRecipeProvider(recipeProvider);
+            return audioProvider;
+          },
+        ),
       ],
       child: MaterialApp(
         title: 'MOMENTO',

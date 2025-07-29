@@ -1,13 +1,25 @@
 import 'package:flutter/foundation.dart';
+import 'package:record/record.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import '../models/audio_file.dart';
+import '../services/api/audio_service.dart';
+import 'recipe_provider.dart';
 
 class AudioProvider extends ChangeNotifier {
+  final AudioRecorder _audioRecord = AudioRecorder();
+  final AudioService _audioService = AudioService();
+  RecipeProvider? _recipeProvider;
+
   List<AudioFile> _audioFiles = [];
   bool _isLoading = false;
   bool _isRecording = false;
   bool _isUploading = false;
   String? _errorMessage;
   AudioFile? _currentProcessingAudio;
+  String? _currentRecordingPath;
+  bool _hasRecording = false;
 
   List<AudioFile> get audioFiles => _audioFiles;
   bool get isLoading => _isLoading;
@@ -15,25 +27,33 @@ class AudioProvider extends ChangeNotifier {
   bool get isUploading => _isUploading;
   String? get errorMessage => _errorMessage;
   AudioFile? get currentProcessingAudio => _currentProcessingAudio;
+  bool get hasRecording => _hasRecording;
+
+  void setRecipeProvider(RecipeProvider recipeProvider) {
+    _recipeProvider = recipeProvider;
+  }
 
   Future<void> loadAudioFiles() async {
     _setLoading(true);
     _clearError();
 
     try {
-      // TODO: Implement API call to load audio files
-      // final result = await _audioService.getAudioFiles();
-      // if (result.isSuccess) {
-      //   _audioFiles = result.audioFiles;
-      // } else {
-      //   _setError(result.message);
-      // }
-      
-      // Temporary mock data
-      _audioFiles = [];
-      
+      print('🔍 AudioProvider loadAudioFiles 시작');
+      final result = await _audioService.getAudioFiles();
+
+      if (result.isSuccess && result.audioFiles != null) {
+        _audioFiles = result.audioFiles!;
+        print('✅ 오디오 파일 ${_audioFiles.length}개 로드 완료');
+      } else {
+        final errorMsg = result.message ?? '오디오 파일을 불러오는데 실패했습니다.';
+        print('❌ 오디오 파일 로드 실패: $errorMsg');
+        _setError(errorMsg);
+        _audioFiles = []; // Clear on error
+      }
     } catch (e) {
-      _setError('오디오 파일을 불러오는데 실패했습니다.');
+      print('❌ AudioProvider loadAudioFiles exception: $e');
+      _setError('오디오 파일을 불러오는데 실패했습니다: $e');
+      _audioFiles = [];
     } finally {
       _setLoading(false);
     }
@@ -42,16 +62,49 @@ class AudioProvider extends ChangeNotifier {
   Future<bool> startRecording() async {
     try {
       _clearError();
-      
-      // TODO: Implement recording logic
-      // Check permissions
+
+      // Check microphone permission
+      if (!await _checkMicrophonePermission()) {
+        _setError('마이크 권한이 필요합니다.');
+        return false;
+      }
+
+      // Check if device has microphone
+      if (!await _audioRecord.hasPermission()) {
+        _setError('마이크 권한이 거부되었습니다.');
+        return false;
+      }
+
+      // Create directory for recordings
+      final directory = await getApplicationDocumentsDirectory();
+      final recordingsDir = Directory('${directory.path}/recordings');
+      if (!await recordingsDir.exists()) {
+        await recordingsDir.create(recursive: true);
+      }
+
+      // Generate unique filename
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      _currentRecordingPath = '${recordingsDir.path}/recording_$timestamp.m4a';
+
       // Start recording
-      
+      await _audioRecord.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: _currentRecordingPath!,
+      );
+
       _isRecording = true;
+      _hasRecording = false;
       notifyListeners();
+
+      debugPrint('🎙️ 녹음 시작: $_currentRecordingPath');
       return true;
     } catch (e) {
-      _setError('녹음을 시작할 수 없습니다.');
+      _setError('녹음을 시작할 수 없습니다: $e');
+      debugPrint('❌ 녹음 시작 오류: $e');
       return false;
     }
   }
@@ -59,20 +112,35 @@ class AudioProvider extends ChangeNotifier {
   Future<String?> stopRecording() async {
     try {
       _clearError();
-      
-      // TODO: Implement stop recording logic
+
+      if (!_isRecording) {
+        _setError('현재 녹음 중이 아닙니다.');
+        return null;
+      }
+
       // Stop recording
-      // Return file path
-      
+      final path = await _audioRecord.stop();
+
       _isRecording = false;
+
+      if (path != null && await File(path).exists()) {
+        _currentRecordingPath = path;
+        _hasRecording = true;
+        debugPrint('✅ 녹음 완료: $path');
+      } else {
+        _setError('녹음 파일을 저장할 수 없습니다.');
+        _hasRecording = false;
+        debugPrint('❌ 녹음 파일 저장 실패');
+      }
+
       notifyListeners();
-      
-      // Return mock file path for now
-      return '/path/to/recorded/file.wav';
+      return path;
     } catch (e) {
-      _setError('녹음을 중지하는데 실패했습니다.');
+      _setError('녹음을 중지하는데 실패했습니다: $e');
       _isRecording = false;
+      _hasRecording = false;
       notifyListeners();
+      debugPrint('❌ 녹음 중지 오류: $e');
       return null;
     }
   }
@@ -93,11 +161,10 @@ class AudioProvider extends ChangeNotifier {
       //   _setError(result.message);
       //   return false;
       // }
-      
+
       // Mock successful upload
       await Future.delayed(const Duration(seconds: 2));
       return true;
-      
     } catch (e) {
       _setError('파일 업로드에 실패했습니다.');
       return false;
@@ -108,7 +175,7 @@ class AudioProvider extends ChangeNotifier {
 
   Future<bool> processAudio(String audioId) async {
     _clearError();
-    
+
     try {
       // Find the audio file
       final audioIndex = _audioFiles.indexWhere((audio) => audio.id == audioId);
@@ -149,7 +216,6 @@ class AudioProvider extends ChangeNotifier {
       _currentProcessingAudio = null;
       notifyListeners();
       return true;
-
     } catch (e) {
       _setError('음성 처리에 실패했습니다.');
       _currentProcessingAudio = null;
@@ -193,5 +259,90 @@ class AudioProvider extends ChangeNotifier {
 
   void clearError() {
     _clearError();
+  }
+
+  // Upload and process current recording
+  Future<bool> uploadAndProcessRecording() async {
+    if (!_hasRecording || _currentRecordingPath == null) {
+      _setError('업로드할 녹음 파일이 없습니다.');
+      return false;
+    }
+
+    try {
+      _setUploading(true);
+      _clearError();
+
+      // Upload audio file
+      debugPrint('📤 오디오 파일 업로드 시작: $_currentRecordingPath');
+      final uploadResult =
+          await _audioService.uploadAudio(_currentRecordingPath!);
+
+      if (!uploadResult.isSuccess) {
+        _setError(uploadResult.message ?? '파일 업로드에 실패했습니다.');
+        return false;
+      }
+
+      debugPrint('✅ 오디오 파일 업로드 완료');
+
+      // Process audio for recipe extraction
+      debugPrint('🔄 음성 처리 및 레시피 생성 시작');
+      final processResult =
+          await _audioService.processAudio(uploadResult.audioId!);
+
+      if (!processResult.isSuccess) {
+        _setError(processResult.message ?? '음성 처리에 실패했습니다.');
+        return false;
+      }
+
+      debugPrint('🎉 레시피 생성 완료');
+
+      // Create recipe from processed audio
+      if (_recipeProvider != null && processResult.recipeId != null) {
+        await _recipeProvider!.createRecipeFromAudio(uploadResult.audioId!);
+      }
+
+      // Clear current recording
+      _hasRecording = false;
+      _currentRecordingPath = null;
+
+      // Reload audio files
+      await loadAudioFiles();
+
+      return true;
+    } catch (e) {
+      _setError('처리 중 오류가 발생했습니다: $e');
+      debugPrint('❌ 업로드/처리 오류: $e');
+      return false;
+    } finally {
+      _setUploading(false);
+    }
+  }
+
+  // Check microphone permission
+  Future<bool> _checkMicrophonePermission() async {
+    try {
+      PermissionStatus permission = await Permission.microphone.status;
+
+      if (permission.isDenied) {
+        permission = await Permission.microphone.request();
+      }
+
+      if (permission.isPermanentlyDenied) {
+        await openAppSettings();
+        return false;
+      }
+
+      return permission.isGranted;
+    } catch (e) {
+      debugPrint('권한 확인 오류: $e');
+      return false;
+    }
+  }
+
+  // Dispose resources
+  @override
+  void dispose() {
+    _audioRecord.dispose();
+    super.dispose();
   }
 }

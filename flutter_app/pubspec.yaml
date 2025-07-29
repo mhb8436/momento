@@ -28,12 +28,11 @@ dependencies:
   hive_flutter: ^1.1.0
   
   # Audio Recording & Playback
-  record: ^5.0.4
+  record: ^5.1.2
   audioplayers: ^5.2.1
   permission_handler: ^11.2.0
   
-  # File Handling
-  file_picker: ^6.1.1
+  # File Handling  
   path_provider: ^2.1.2
   
   # JSON Serialization
@@ -60,6 +59,9 @@ dev_dependencies:
   
   # Testing
   mockito: ^5.4.4
+
+dependency_overrides:
+  record_linux: ^1.1.1
 
 flutter:
   uses-material-design: true

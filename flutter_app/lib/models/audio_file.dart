@@ -16,6 +16,8 @@ class AudioFile {
   final String? transcriptText;
   @JsonKey(name: 'processing_status')
   final String processingStatus;
+  @JsonKey(name: 'recipe_id')
+  final String? recipeId;
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
@@ -27,6 +29,7 @@ class AudioFile {
     this.duration,
     this.transcriptText,
     required this.processingStatus,
+    this.recipeId,
     required this.createdAt,
   });
 
@@ -63,6 +66,7 @@ class AudioFile {
     int? duration,
     String? transcriptText,
     String? processingStatus,
+    String? recipeId,
     DateTime? createdAt,
   }) {
     return AudioFile(
@@ -73,6 +77,7 @@ class AudioFile {
       duration: duration ?? this.duration,
       transcriptText: transcriptText ?? this.transcriptText,
       processingStatus: processingStatus ?? this.processingStatus,
+      recipeId: recipeId ?? this.recipeId,
       createdAt: createdAt ?? this.createdAt,
     );
   }
