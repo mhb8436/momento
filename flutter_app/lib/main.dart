@@ -10,6 +10,7 @@ import 'providers/recipe_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'services/storage/local_storage_service.dart';
+import 'services/api/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +22,7 @@ void main() async {
   await LocalStorageService.init();
   
   // Initialize API service
-  // ApiService().initialize();
+  ApiService().initialize();
   
   runApp(const MomentoApp());
 }

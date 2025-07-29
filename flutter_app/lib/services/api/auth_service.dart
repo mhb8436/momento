@@ -15,6 +15,9 @@ class AuthService {
     String? fullName,
   }) async {
     try {
+      print('🔍 AuthService signup API 호출: $email');
+      print('🔍 API URL: ${AppConfig.baseUrl}${AppConfig.authEndpoint}/signup');
+      
       final response = await _apiService.post(
         '${AppConfig.authEndpoint}/signup',
         data: {
@@ -24,18 +27,22 @@ class AuthService {
         },
       );
 
+      print('🔍 API 응답: status=${response.statusCode}, data=${response.data}');
+
       if (response.statusCode == 200) {
         final user = User.fromJson(response.data);
         return AuthResult.success(user: user);
       } else {
-        return AuthResult.failure(
-          message: response.data['detail'] ?? '회원가입에 실패했습니다.',
-        );
+        final errorMsg = response.data['detail'] ?? '회원가입에 실패했습니다.';
+        print('❌ API 오류 응답: $errorMsg');
+        return AuthResult.failure(message: errorMsg);
       }
     } on ApiException catch (e) {
+      print('❌ ApiException: ${e.message} (status: ${e.statusCode})');
       return AuthResult.failure(message: e.message);
     } catch (e) {
-      return AuthResult.failure(message: '알 수 없는 오류가 발생했습니다.');
+      print('❌ 일반 Exception: $e');
+      return AuthResult.failure(message: '알 수 없는 오류가 발생했습니다: $e');
     }
   }
 

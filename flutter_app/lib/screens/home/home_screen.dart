@@ -514,8 +514,15 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         selectedItemColor: AppTheme.primaryColor,
         unselectedItemColor: AppTheme.textLight,
-        selectedLabelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+        selectedLabelStyle: const TextStyle(
+          fontSize: 12,
           fontWeight: FontWeight.w600,
+          color: AppTheme.primaryColor,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.normal,
+          color: AppTheme.textLight,
         ),
         items: const [
           BottomNavigationBarItem(
