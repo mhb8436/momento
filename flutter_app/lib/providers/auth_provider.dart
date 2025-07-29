@@ -59,21 +59,29 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
 
     try {
+      print('🔍 AuthProvider signup 시작: $email');
+      
       final result = await _authService.signup(
         email: email,
         password: password,
         fullName: fullName,
       );
 
+      print('🔍 AuthService signup 결과: success=${result.isSuccess}, message=${result.message}');
+
       if (result.isSuccess && result.user != null) {
         // After successful signup, automatically login
+        print('🔍 회원가입 성공, 자동 로그인 시도');
         return await login(email: email, password: password);
       } else {
-        _setError(result.message ?? '회원가입에 실패했습니다.');
+        final errorMsg = result.message ?? '회원가입에 실패했습니다.';
+        print('❌ 회원가입 실패: $errorMsg');
+        _setError(errorMsg);
         return false;
       }
     } catch (e) {
-      _setError('알 수 없는 오류가 발생했습니다.');
+      print('❌ AuthProvider signup exception: $e');
+      _setError('알 수 없는 오류가 발생했습니다: $e');
       return false;
     } finally {
       _setLoading(false);

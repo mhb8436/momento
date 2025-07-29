@@ -35,6 +35,8 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _handleSignup() async {
     if (!_formKey.currentState!.validate()) return;
 
+    print('🔍 회원가입 시작: ${_emailController.text.trim()}');
+
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.signup(
       email: _emailController.text.trim(),
@@ -43,6 +45,8 @@ class _SignupScreenState extends State<SignupScreen> {
           ? null 
           : _fullNameController.text.trim(),
     );
+
+    print('🔍 회원가입 결과: success=$success, error=${authProvider.errorMessage}');
 
     if (!mounted) return;
 
@@ -55,10 +59,14 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       );
     } else {
+      final errorMessage = authProvider.errorMessage ?? '회원가입에 실패했습니다.';
+      print('❌ 회원가입 실패: $errorMessage');
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.errorMessage ?? '회원가입에 실패했습니다.'),
+          content: Text(errorMessage),
           backgroundColor: AppTheme.errorColor,
+          duration: const Duration(seconds: 5), // 더 오래 표시
         ),
       );
     }
