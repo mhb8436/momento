@@ -23,6 +23,12 @@ fi
 echo "📊 데이터베이스 마이그레이션 상태 확인..."
 alembic current
 
+# 마이그레이션이 없으면 생성
+if [ ! -f alembic/versions/*.py ] 2>/dev/null; then
+    echo "🔧 초기 마이그레이션을 생성합니다..."
+    alembic revision --autogenerate -m "Initial migration"
+fi
+
 echo "🔧 최신 마이그레이션 적용..."
 alembic upgrade head
 
