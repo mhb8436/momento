@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
 import '../models/recipe.dart';
+import '../services/api/recipe_service.dart';
 
 class RecipeProvider extends ChangeNotifier {
+  final RecipeService _recipeService = RecipeService();
+  
   List<Recipe> _recipes = [];
   bool _isLoading = false;
   bool _isCreating = false;
@@ -19,19 +22,23 @@ class RecipeProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      // TODO: Implement API call to load recipes
-      // final result = await _recipeService.getRecipes();
-      // if (result.isSuccess) {
-      //   _recipes = result.recipes;
-      // } else {
-      //   _setError(result.message);
-      // }
+      print('🔍 RecipeProvider loadRecipes 시작');
+      final result = await _recipeService.getRecipes();
       
-      // Temporary mock data
-      _recipes = [];
+      if (result.isSuccess && result.recipes != null) {
+        _recipes = result.recipes!;
+        print('✅ 레시피 ${_recipes.length}개 로드 완료');
+      } else {
+        final errorMsg = result.message ?? '레시피를 불러오는데 실패했습니다.';
+        print('❌ 레시피 로드 실패: $errorMsg');
+        _setError(errorMsg);
+        _recipes = []; // Clear on error
+      }
       
     } catch (e) {
-      _setError('레시피를 불러오는데 실패했습니다.');
+      print('❌ RecipeProvider loadRecipes exception: $e');
+      _setError('레시피를 불러오는데 실패했습니다: $e');
+      _recipes = [];
     } finally {
       _setLoading(false);
     }
@@ -42,56 +49,82 @@ class RecipeProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      // TODO: Implement API call to create recipe
-      // final result = await _recipeService.createRecipeFromAudio(audioId);
-      // if (result.isSuccess) {
-      //   final recipe = result.recipe;
-      //   _recipes.insert(0, recipe);
-      //   _currentRecipe = recipe;
-      //   notifyListeners();
-      //   return true;
-      // } else {
-      //   _setError(result.message);
-      //   return false;
-      // }
-
-      // Mock recipe creation
-      await Future.delayed(const Duration(seconds: 2));
+      print('🔍 RecipeProvider createRecipeFromAudio 시작: $audioId');
       
-      final mockRecipe = Recipe(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        userId: 'user1',
-        sourceAudioId: audioId,
-        title: 'AI가 정리한 엄마표 김치찌개',
-        description: '엄마가 해주시던 그 맛 그대로, 따뜻한 사랑이 담긴 김치찌개 레시피입니다.',
-        ingredients: [
-          RecipeIngredient(name: '김치', amount: '1컵', notes: '신김치 사용'),
-          RecipeIngredient(name: '돼지고기', amount: '200g'),
-          RecipeIngredient(name: '두부', amount: '1/2모'),
-          RecipeIngredient(name: '대파', amount: '1대'),
-        ],
-        steps: [
-          RecipeStep(step: 1, instruction: '김치를 적당한 크기로 썰어주세요', time: '5분'),
-          RecipeStep(step: 2, instruction: '돼지고기를 볶아주세요', time: '3분'),
-          RecipeStep(step: 3, instruction: '김치를 넣고 함께 볶아주세요', time: '5분'),
-          RecipeStep(step: 4, instruction: '물을 넣고 끓여주세요', time: '15분'),
-        ],
-        tips: '김치가 너무 시면 설탕을 조금 넣어주세요',
-        servings: '2-3인분',
-        cookingTime: '30분',
-        difficulty: '쉬움',
-        category: '한식',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+      // Note: This method will be called after audio processing is complete
+      // The backend should already have the transcribed text and structured recipe data
+      // We need to create a recipe using basic info and let the backend fill in details
+      final result = await _recipeService.createRecipe(
+        title: 'AI 생성 레시피',
+        description: '음성으로부터 생성된 레시피입니다.',
+        ingredients: [], // Backend will populate from audio processing
+        instructions: [], // Backend will populate from audio processing
+        audioId: audioId,
       );
-
-      _recipes.insert(0, mockRecipe);
-      _currentRecipe = mockRecipe;
-      notifyListeners();
-      return true;
-
+      
+      if (result.isSuccess && result.recipe != null) {
+        _recipes.insert(0, result.recipe!);
+        _currentRecipe = result.recipe!;
+        print('✅ 레시피 생성 완료: ${result.recipe!.title}');
+        notifyListeners();
+        return true;
+      } else {
+        final errorMsg = result.message ?? '레시피 생성에 실패했습니다.';
+        print('❌ 레시피 생성 실패: $errorMsg');
+        _setError(errorMsg);
+        return false;
+      }
     } catch (e) {
-      _setError('레시피 생성에 실패했습니다.');
+      print('❌ RecipeProvider createRecipeFromAudio exception: $e');
+      _setError('레시피 생성 중 오류가 발생했습니다: $e');
+      return false;
+    } finally {
+      _setCreating(false);
+    }
+  }
+
+  Future<bool> createRecipe({
+    required String title,
+    required String description,
+    required List<String> ingredients,
+    required List<String> instructions,
+    int? servings,
+    int? cookingTime,
+    String? difficulty,
+    List<String>? tags,
+  }) async {
+    _setCreating(true);
+    _clearError();
+
+    try {
+      print('🔍 RecipeProvider createRecipe 시작: $title');
+      
+      final result = await _recipeService.createRecipe(
+        title: title,
+        description: description,
+        ingredients: ingredients,
+        instructions: instructions,
+        servings: servings,
+        cookingTime: cookingTime,
+        difficulty: difficulty,
+        tags: tags,
+      );
+      
+      if (result.isSuccess && result.recipe != null) {
+        _recipes.insert(0, result.recipe!);
+        _currentRecipe = result.recipe!;
+        print('✅ 레시피 생성 완료: ${result.recipe!.title}');
+        notifyListeners();
+        return true;
+      } else {
+        final errorMsg = result.message ?? '레시피 생성에 실패했습니다.';
+        print('❌ 레시피 생성 실패: $errorMsg');
+        _setError(errorMsg);
+        return false;
+      }
+    } catch (e) {
+      print('❌ RecipeProvider createRecipe exception: $e');
+      _setError('레시피 생성 중 오류가 발생했습니다: $e');
       return false;
     } finally {
       _setCreating(false);
@@ -102,44 +135,43 @@ class RecipeProvider extends ChangeNotifier {
     _clearError();
 
     try {
+      print('🔍 RecipeProvider updateRecipe 시작: $recipeId');
+      
       final recipeIndex = _recipes.indexWhere((recipe) => recipe.id == recipeId);
       if (recipeIndex == -1) {
         _setError('레시피를 찾을 수 없습니다.');
         return false;
       }
 
-      // TODO: Implement API call to update recipe
-      // final result = await _recipeService.updateRecipe(recipeId, updates);
-      // if (result.isSuccess) {
-      //   _recipes[recipeIndex] = result.recipe;
-      //   if (_currentRecipe?.id == recipeId) {
-      //     _currentRecipe = result.recipe;
-      //   }
-      //   notifyListeners();
-      //   return true;
-      // } else {
-      //   _setError(result.message);
-      //   return false;
-      // }
-
-      // Mock update
-      final originalRecipe = _recipes[recipeIndex];
-      _recipes[recipeIndex] = originalRecipe.copyWith(
-        title: updates['title'] ?? originalRecipe.title,
-        description: updates['description'] ?? originalRecipe.description,
-        tips: updates['tips'] ?? originalRecipe.tips,
-        updatedAt: DateTime.now(),
+      final result = await _recipeService.updateRecipe(
+        recipeId: recipeId,
+        title: updates['title'],
+        description: updates['description'],
+        ingredients: updates['ingredients'],
+        instructions: updates['instructions'],
+        servings: updates['servings'],
+        cookingTime: updates['cooking_time'],
+        difficulty: updates['difficulty'],
+        tags: updates['tags'],
       );
-
-      if (_currentRecipe?.id == recipeId) {
-        _currentRecipe = _recipes[recipeIndex];
+      
+      if (result.isSuccess && result.recipe != null) {
+        _recipes[recipeIndex] = result.recipe!;
+        if (_currentRecipe?.id == recipeId) {
+          _currentRecipe = result.recipe!;
+        }
+        print('✅ 레시피 수정 완료: ${result.recipe!.title}');
+        notifyListeners();
+        return true;
+      } else {
+        final errorMsg = result.message ?? '레시피 수정에 실패했습니다.';
+        print('❌ 레시피 수정 실패: $errorMsg');
+        _setError(errorMsg);
+        return false;
       }
-
-      notifyListeners();
-      return true;
-
     } catch (e) {
-      _setError('레시피 수정에 실패했습니다.');
+      print('❌ RecipeProvider updateRecipe exception: $e');
+      _setError('레시피 수정 중 오류가 발생했습니다: $e');
       return false;
     }
   }
@@ -148,22 +180,27 @@ class RecipeProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      // TODO: Implement API call to delete recipe
-      // final result = await _recipeService.deleteRecipe(recipeId);
-      // if (!result.isSuccess) {
-      //   _setError(result.message);
-      //   return false;
-      // }
-
-      _recipes.removeWhere((recipe) => recipe.id == recipeId);
-      if (_currentRecipe?.id == recipeId) {
-        _currentRecipe = null;
+      print('🔍 RecipeProvider deleteRecipe 시작: $recipeId');
+      
+      final result = await _recipeService.deleteRecipe(recipeId);
+      
+      if (result.isSuccess) {
+        _recipes.removeWhere((recipe) => recipe.id == recipeId);
+        if (_currentRecipe?.id == recipeId) {
+          _currentRecipe = null;
+        }
+        print('✅ 레시피 삭제 완료: $recipeId');
+        notifyListeners();
+        return true;
+      } else {
+        final errorMsg = result.message ?? '레시피 삭제에 실패했습니다.';
+        print('❌ 레시피 삭제 실패: $errorMsg');
+        _setError(errorMsg);
+        return false;
       }
-      notifyListeners();
-      return true;
-
     } catch (e) {
-      _setError('레시피 삭제에 실패했습니다.');
+      print('❌ RecipeProvider deleteRecipe exception: $e');
+      _setError('레시피 삭제 중 오류가 발생했습니다: $e');
       return false;
     }
   }
