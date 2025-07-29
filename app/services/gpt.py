@@ -1,10 +1,11 @@
-import openai
+from openai import OpenAI
 import json
 from typing import Dict, Any, Optional
 from app.config import settings
 
-# OpenAI 클라이언트 초기화
-client = openai.OpenAI(api_key=settings.openai_api_key)
+# OpenAI 클라이언트 초기화 (lazy initialization)
+def get_openai_client():
+    return OpenAI(api_key=settings.openai_api_key)
 
 
 async def organize_recipe_from_text(transcript_text: str) -> Optional[Dict[str, Any]]:
@@ -64,6 +65,7 @@ async def organize_recipe_from_text(transcript_text: str) -> Optional[Dict[str, 
 """
 
     try:
+        client = get_openai_client()
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -154,6 +156,7 @@ async def improve_recipe_description(recipe_data: Dict[str, Any]) -> Optional[st
 """
 
     try:
+        client = get_openai_client()
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
