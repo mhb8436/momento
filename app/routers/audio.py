@@ -21,8 +21,11 @@ async def upload_audio_file(
 ):
     """오디오 파일 업로드"""
     
+    print(f"🔍 받은 파일: {file.filename}, Content-Type: {file.content_type}")
+    
     # 파일 타입 검증
     if not file.content_type or not file.content_type.startswith("audio/"):
+        print(f"❌ 잘못된 파일 타입: {file.content_type}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only audio files are allowed"
@@ -97,14 +100,19 @@ async def process_audio_file(
         )
     
     try:
+        print(f"🔍 오디오 처리 시작: {audio_file.id}")
+        
         # 처리 상태 업데이트
         audio_file.processing_status = "processing"
         await db.commit()
+        print(f"🔍 처리 상태를 'processing'으로 업데이트")
         
         # STT 처리
+        print(f"🔍 STT 처리 시작: {audio_file.file_path}")
         transcript_text = await transcribe_audio(audio_file.file_path)
         
         if not transcript_text:
+            print("❌ STT 처리 실패: transcript_text가 None")
             audio_file.processing_status = "failed"
             await db.commit()
             raise HTTPException(
@@ -112,20 +120,64 @@ async def process_audio_file(
                 detail="Failed to transcribe audio"
             )
         
+        print(f"✅ STT 처리 성공: {len(transcript_text)} 문자")
+        
+        # GPT로 레시피 생성
+        print(f"🔍 GPT 레시피 생성 시작")
+        from app.services.gpt import organize_recipe_from_text
+        from app.models.recipe import Recipe
+        
+        recipe_data = await organize_recipe_from_text(transcript_text)
+        recipe_id = None
+        
+        if recipe_data:
+            print(f"✅ GPT 레시피 생성 성공: {recipe_data['title']}")
+            
+            # 레시피 데이터베이스에 저장
+            recipe = Recipe(
+                user_id=current_user.id,
+                source_audio_id=audio_file.id,
+                title=recipe_data.get("title", "정리된 레시피"),
+                description=recipe_data.get("description", ""),
+                ingredients=recipe_data.get("ingredients", []),
+                steps=recipe_data.get("steps", []),
+                tips=recipe_data.get("tips", ""),
+                servings=recipe_data.get("servings", "2-3인분"),
+                cooking_time=recipe_data.get("cooking_time", "30분"),
+                difficulty=recipe_data.get("difficulty", "보통"),
+                category=recipe_data.get("category", "한식")
+            )
+            
+            db.add(recipe)
+            await db.commit()
+            await db.refresh(recipe)
+            recipe_id = str(recipe.id)
+            print(f"✅ 레시피 데이터베이스 저장 완료: {recipe_id}")
+        else:
+            print("❌ GPT 레시피 생성 실패")
+        
         # 결과 저장
         audio_file.transcript_text = transcript_text
         audio_file.processing_status = "completed"
         await db.commit()
+        print(f"✅ 처리 완료, 상태를 'completed'로 업데이트")
         
         return AudioProcessResponse(
             audio_id=str(audio_file.id),
             transcript_text=transcript_text,
-            processing_status="completed"
+            processing_status="completed",
+            recipe_id=recipe_id
         )
         
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ 오디오 처리 중 예외 발생:")
+        print(f"   오류 타입: {type(e).__name__}")
+        print(f"   오류 메시지: {str(e)}")
+        import traceback
+        print(f"   스택 트레이스: {traceback.format_exc()}")
+        
         audio_file.processing_status = "failed"
         await db.commit()
         raise HTTPException(

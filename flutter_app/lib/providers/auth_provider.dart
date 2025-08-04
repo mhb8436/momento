@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/user.dart';
 import '../services/api/auth_service.dart';
 import '../services/storage/local_storage_service.dart';
+import '../services/cache_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -9,11 +10,14 @@ class AuthProvider extends ChangeNotifier {
   User? _user;
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isOfflineMode = false;
 
   User? get user => _user;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  String? get error => _errorMessage;
   bool get isAuthenticated => _user != null && LocalStorageService.hasAccessToken();
+  bool get isOfflineMode => _isOfflineMode;
 
   AuthProvider() {
     _initializeAuth();
@@ -35,17 +39,44 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _verifyCurrentUser() async {
     try {
+      // 먼저 서버 연결 상태 확인
+      final isServerOnline = await CacheService.isOnline();
+      
+      if (!isServerOnline) {
+        print('🔍 서버 오프라인 - 기존 사용자 정보 유지');
+        // 서버가 다운된 경우 기존 토큰과 사용자 정보 유지
+        _isOfflineMode = true;
+        notifyListeners();
+        return;
+      }
+      
       final result = await _authService.getCurrentUser();
       if (result.isSuccess && result.user != null) {
         _user = result.user;
         await LocalStorageService.saveUserData(_user!);
+        _isOfflineMode = false; // 서버 연결 성공
         notifyListeners();
+        print('✅ 사용자 정보 검증 완료');
       } else {
-        // Token is invalid, logout
+        // Token is invalid (서버는 정상이지만 토큰이 만료된 경우)
+        print('❌ 토큰 만료 - 로그아웃');
         await logout();
       }
     } catch (e) {
-      // Token might be invalid, logout
+      print('❌ 사용자 검증 중 오류: $e');
+      
+      // 서버 연결 상태 재확인
+      final isServerOnline = await CacheService.isOnline();
+      if (!isServerOnline) {
+        print('🔍 서버 연결 불가 - 기존 사용자 정보 유지');
+        // 서버 문제인 경우 기존 토큰과 사용자 정보 유지
+        _isOfflineMode = true;
+        notifyListeners();
+        return;
+      }
+      
+      // 서버는 정상인데 다른 오류인 경우만 로그아웃
+      print('❌ 인증 오류 - 로그아웃');
       await logout();
     }
   }
@@ -157,6 +188,130 @@ class AuthProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Refresh user error: $e');
+    }
+  }
+
+  Future<bool> updateProfile({String? fullName}) async {
+    if (!isAuthenticated) {
+      _setError('로그인이 필요합니다.');
+      return false;
+    }
+
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final result = await _authService.updateProfile(fullName: fullName);
+      
+      if (result.isSuccess && result.user != null) {
+        _user = result.user;
+        await LocalStorageService.saveUserData(_user!);
+        notifyListeners();
+        return true;
+      } else {
+        _setError(result.message ?? '프로필 업데이트에 실패했습니다.');
+        return false;
+      }
+    } catch (e) {
+      _setError('프로필 업데이트 중 오류가 발생했습니다.');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> uploadProfileImage(String filePath) async {
+    if (!isAuthenticated) {
+      _setError('로그인이 필요합니다.');
+      return false;
+    }
+
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final result = await _authService.uploadProfileImage(filePath);
+      
+      if (result.isSuccess && result.user != null) {
+        _user = result.user;
+        await LocalStorageService.saveUserData(_user!);
+        notifyListeners();
+        return true;
+      } else {
+        _setError(result.message ?? '프로필 이미지 업로드에 실패했습니다.');
+        return false;
+      }
+    } catch (e) {
+      _setError('프로필 이미지 업로드 중 오류가 발생했습니다.');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    if (!isAuthenticated) {
+      _setError('로그인이 필요합니다.');
+      return false;
+    }
+
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final result = await _authService.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      
+      if (result.isSuccess) {
+        return true;
+      } else {
+        _setError(result.message ?? '비밀번호 변경에 실패했습니다.');
+        return false;
+      }
+    } catch (e) {
+      _setError('비밀번호 변경 중 오류가 발생했습니다.');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> deleteAccount({
+    required String password,
+    required String confirmation,
+  }) async {
+    if (!isAuthenticated) {
+      _setError('로그인이 필요합니다.');
+      return false;
+    }
+
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final result = await _authService.deleteAccount(
+        password: password,
+        confirmation: confirmation,
+      );
+      
+      if (result.isSuccess) {
+        // Account deleted successfully, perform logout
+        await logout();
+        return true;
+      } else {
+        _setError(result.message ?? '계정 삭제에 실패했습니다.');
+        return false;
+      }
+    } catch (e) {
+      _setError('계정 삭제 중 오류가 발생했습니다.');
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 

@@ -322,19 +322,51 @@ class AudioProvider extends ChangeNotifier {
   Future<bool> _checkMicrophonePermission() async {
     try {
       PermissionStatus permission = await Permission.microphone.status;
-
-      if (permission.isDenied) {
+      debugPrint('🔍 초기 마이크 권한 상태: $permission');
+      
+      // iOS 시뮬레이터에서는 granted가 아닌 경우 무조건 요청
+      if (!permission.isGranted) {
+        debugPrint('🔍 마이크 권한 요청 시작');
         permission = await Permission.microphone.request();
+        debugPrint('🔍 마이크 권한 요청 후 상태: $permission');
       }
 
+      // iOS 시뮬레이터에서 permanentlyDenied가 잘못 나오는 경우를 위한 추가 체크
       if (permission.isPermanentlyDenied) {
+        debugPrint('🔍 권한이 영구적으로 거부됨 - AudioRecorder로도 확인');
+        
+        // AudioRecorder의 hasPermission으로도 체크
+        try {
+          final audioPermission = await _audioRecord.hasPermission();
+          debugPrint('🔍 AudioRecorder 권한 상태: $audioPermission');
+          
+          if (audioPermission) {
+            debugPrint('🔍 AudioRecorder에서는 권한이 허용됨 - 진행');
+            return true;
+          }
+        } catch (audioError) {
+          debugPrint('🔍 AudioRecorder 권한 체크 오류: $audioError');
+        }
+        
+        // 시뮬레이터에서는 실제로 권한이 있을 수 있으므로 한 번 더 체크
+        final retryPermission = await Permission.microphone.status;
+        debugPrint('🔍 재확인 권한 상태: $retryPermission');
+        
+        if (retryPermission.isGranted) {
+          debugPrint('🔍 재확인 결과 권한이 허용됨');
+          return true;
+        }
+        
+        // 여전히 거부되어 있다면 설정으로 이동
+        debugPrint('🔍 설정 앱으로 이동');
         await openAppSettings();
         return false;
       }
 
+      debugPrint('🔍 최종 권한 결과: ${permission.isGranted}');
       return permission.isGranted;
     } catch (e) {
-      debugPrint('권한 확인 오류: $e');
+      debugPrint('❌ 권한 확인 오류: $e');
       return false;
     }
   }

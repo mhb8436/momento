@@ -108,4 +108,63 @@ class LocalStorageService {
   static bool containsKey(String key) {
     return _instance.containsKey(key);
   }
+
+  // FCM Token Management
+  static Future<void> saveFCMToken(String token) async {
+    await _instance.setString('fcm_token', token);
+  }
+
+  static String? getFCMToken() {
+    return _instance.getString('fcm_token');
+  }
+
+  static Future<void> removeFCMToken() async {
+    await _instance.remove('fcm_token');
+  }
+
+  // Notification Settings Management
+  static Future<void> saveNotificationSetting(String key, dynamic value) async {
+    await saveSetting('notification_$key', value);
+  }
+
+  static T? getNotificationSetting<T>(String key, {T? defaultValue}) {
+    return getSetting<T>('notification_$key', defaultValue: defaultValue);
+  }
+
+  static Future<void> removeNotificationSetting(String key) async {
+    await removeSetting('notification_$key');
+  }
+
+  // Convenience methods for notification settings
+  static Future<void> setPushNotificationsEnabled(bool enabled) async {
+    await saveNotificationSetting('push_notifications', enabled);
+  }
+
+  static bool isPushNotificationsEnabled() {
+    return getNotificationSetting<bool>('push_notifications', defaultValue: true) ?? true;
+  }
+
+  static Future<void> setQuietHoursEnabled(bool enabled) async {
+    await saveNotificationSetting('quiet_hours_enabled', enabled);
+  }
+
+  static bool isQuietHoursEnabled() {
+    return getNotificationSetting<bool>('quiet_hours_enabled', defaultValue: false) ?? false;
+  }
+
+  static Future<void> setQuietHoursStart(String time) async {
+    await saveNotificationSetting('quiet_hours_start', time);
+  }
+
+  static String? getQuietHoursStart() {
+    return getNotificationSetting<String>('quiet_hours_start', defaultValue: '22:00');
+  }
+
+  static Future<void> setQuietHoursEnd(String time) async {
+    await saveNotificationSetting('quiet_hours_end', time);
+  }
+
+  static String? getQuietHoursEnd() {
+    return getNotificationSetting<String>('quiet_hours_end', defaultValue: '07:00');
+  }
 }

@@ -10,6 +10,9 @@ class ApiService {
   ApiService._internal();
 
   late final Dio _dio;
+  
+  // Dio 인스턴스 접근을 위한 getter
+  Dio get dio => _dio;
 
   void initialize() {
     _dio = Dio(BaseOptions(
@@ -19,6 +22,7 @@ class ApiService {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
       },
     ));
 

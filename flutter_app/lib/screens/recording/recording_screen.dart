@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import '../../config/theme.dart';
 import '../../providers/audio_provider.dart';
+import '../../providers/recipe_provider.dart';
 import '../../widgets/common/custom_icon_button.dart';
+import '../../services/cache_service.dart';
 
 class RecordingScreen extends StatefulWidget {
   const RecordingScreen({super.key});
@@ -18,6 +20,7 @@ class _RecordingScreenState extends State<RecordingScreen>
   late AnimationController _waveController;
   Timer? _recordingTimer;
   int _recordingSeconds = 0;
+  bool _isOffline = false;
 
   @override
   void initState() {
@@ -30,6 +33,16 @@ class _RecordingScreenState extends State<RecordingScreen>
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
+    _checkNetworkStatus();
+  }
+  
+  Future<void> _checkNetworkStatus() async {
+    final isOffline = await CacheService.isOffline();
+    if (mounted) {
+      setState(() {
+        _isOffline = isOffline;
+      });
+    }
   }
 
   @override
@@ -110,9 +123,40 @@ class _RecordingScreenState extends State<RecordingScreen>
   Widget _buildRecordingArea() {
     return Consumer<AudioProvider>(
       builder: (context, audioProvider, _) {
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+        return SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+            // Offline Warning
+            if (_isOffline)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.wifi_off,
+                      color: Colors.orange,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '오프라인 상태입니다. 녹음은 가능하지만 처리를 위해서는 인터넷 연결이 필요합니다.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            
             // Recording Status
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -216,6 +260,7 @@ class _RecordingScreenState extends State<RecordingScreen>
               ),
             ),
           ],
+          ),
         );
       },
     );
@@ -481,6 +526,12 @@ class _RecordingScreenState extends State<RecordingScreen>
         if (success) {
           // Navigate back to home and show success message
           Navigator.pop(context);
+          
+          // 홈 화면 레시피 목록 새로고침
+          if (mounted) {
+            context.read<RecipeProvider>().loadRecipes();
+          }
+          
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('🎉 레시피가 성공적으로 생성되었습니다!'),

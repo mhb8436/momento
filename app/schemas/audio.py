@@ -25,3 +25,4 @@ class AudioProcessResponse(BaseModel):
     audio_id: str
     transcript_text: str
     processing_status: str
+    recipe_id: Optional[str] = None

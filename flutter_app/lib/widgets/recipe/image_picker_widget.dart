@@ -24,7 +24,7 @@ class ImagePickerWidget extends StatelessWidget {
         width: double.infinity,
         height: 200,
         decoration: BoxDecoration(
-          color: AppTheme.backgroundLight,
+          color: AppTheme.backgroundColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: AppTheme.primaryColor.withOpacity(0.3),

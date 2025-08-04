@@ -21,7 +21,10 @@ class RecipeService {
       print('🔍 레시피 목록 API 응답: status=${response.statusCode}, data=${response.data}');
 
       if (response.statusCode == 200) {
-        final List<dynamic> recipesData = response.data['recipes'] ?? [];
+        // 백엔드에서 List[RecipeResponse]를 직접 반환하므로 response.data가 List임
+        final List<dynamic> recipesData = response.data is List 
+            ? response.data 
+            : (response.data['recipes'] ?? []);
         final List<Recipe> recipes = recipesData
             .map((json) => Recipe.fromJson(json))
             .toList();
@@ -192,16 +195,16 @@ class RecipeService {
 
   Future<RecipeListResult> searchRecipes({
     String? query,
-    List<String>? tags,
+    String? category,
     String? difficulty,
     int? maxCookingTime,
   }) async {
     try {
-      print('🔍 RecipeService searchRecipes 시작: query=$query');
+      print('🔍 RecipeService searchRecipes 시작: query=$query, category=$category, difficulty=$difficulty');
       
       final Map<String, dynamic> queryParams = {};
       if (query != null && query.isNotEmpty) queryParams['q'] = query;
-      if (tags != null && tags.isNotEmpty) queryParams['tags'] = tags.join(',');
+      if (category != null && category.isNotEmpty) queryParams['category'] = category;
       if (difficulty != null) queryParams['difficulty'] = difficulty;
       if (maxCookingTime != null) queryParams['max_cooking_time'] = maxCookingTime.toString();
       
@@ -213,7 +216,10 @@ class RecipeService {
       print('🔍 레시피 검색 API 응답: status=${response.statusCode}, data=${response.data}');
 
       if (response.statusCode == 200) {
-        final List<dynamic> recipesData = response.data['recipes'] ?? [];
+        // 백엔드에서 List[RecipeResponse]를 직접 반환하므로 response.data가 List임
+        final List<dynamic> recipesData = response.data is List 
+            ? response.data 
+            : (response.data['recipes'] ?? []);
         final List<Recipe> recipes = recipesData
             .map((json) => Recipe.fromJson(json))
             .toList();

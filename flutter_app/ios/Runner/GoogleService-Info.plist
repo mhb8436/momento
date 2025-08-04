@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyDpw-KDgiux30h_gHHMI4p9rlg7S4IA9rw</string>
+	<key>GCM_SENDER_ID</key>
+	<string>387076489688</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.momento.momentoApp</string>
+	<key>PROJECT_ID</key>
+	<string>momento-app-66cbd</string>
+	<key>STORAGE_BUCKET</key>
+	<string>momento-app-66cbd.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:387076489688:ios:7de95b7fd5377bef7ef2ad</string>
+</dict>
+</plist>

@@ -13,6 +13,7 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
+    profile_image_url = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -20,3 +21,6 @@ class User(Base):
     # Relationships
     audio_files = relationship("AudioFile", back_populates="user", cascade="all, delete-orphan")
     recipes = relationship("Recipe", back_populates="user", cascade="all, delete-orphan")
+    inquiries = relationship("Inquiry", foreign_keys="Inquiry.user_id", back_populates="user", cascade="all, delete-orphan")
+    fcm_tokens = relationship("FCMToken", back_populates="user", cascade="all, delete-orphan")
+    notification_logs = relationship("NotificationLog", back_populates="user", cascade="all, delete-orphan")

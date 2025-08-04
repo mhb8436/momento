@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from typing import List
+from sqlalchemy import select, or_, and_, cast, String
+from typing import List, Optional
 from app.database import get_db
 from app.models.user import User
 from app.models.audio import AudioFile
@@ -296,3 +296,5 @@ async def improve_recipe_description_endpoint(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to improve description: {str(e)}"
         )
+
+

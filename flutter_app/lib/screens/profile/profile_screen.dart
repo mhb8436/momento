@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../config/app_config.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/recipe_provider.dart';
 import '../../providers/audio_provider.dart';
 import '../../widgets/common/custom_icon_button.dart';
+import '../settings/app_info_screen.dart';
+import '../settings/privacy_settings_screen.dart';
+import '../settings/help_screen.dart';
+import '../settings/notification_settings_screen.dart';
+import '../inquiry/inquiry_list_screen.dart';
+import 'profile_edit_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final Function(int)? onTabChange;
+  
+  const ProfileScreen({super.key, this.onTabChange});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -58,11 +67,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   gradient: AppTheme.primaryGradient,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 40,
-                ),
+                child: user?.profileImageUrl != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(40),
+                        child: Image.network(
+                          '${AppConfig.baseUrl}${user!.profileImageUrl}',
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 40,
+                            );
+                          },
+                        ),
+                      )
+                    : const Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 40,
+                      ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -171,18 +197,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
             ),
             onTap: () => _switchToTab(2), // Audio tab
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            title: '즐겨찾기',
-            provider: _buildStatContent(
-              count: 0, // TODO: Implement favorites count
-              icon: Icons.favorite,
-              color: AppTheme.accentColor,
-            ),
-            onTap: _viewFavorites,
           ),
         ),
       ],
@@ -332,17 +346,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             children: [
               _buildMenuItem(
+                icon: Icons.question_answer_outlined,
+                title: '내 문의사항',
+                subtitle: '문의 내역 및 답변 확인',
+                onTap: _openInquiries,
+              ),
+              _buildDivider(),
+              _buildMenuItem(
                 icon: Icons.help_outline,
                 title: '도움말',
                 subtitle: '사용법 및 FAQ',
                 onTap: _openHelp,
-              ),
-              _buildDivider(),
-              _buildMenuItem(
-                icon: Icons.feedback_outlined,
-                title: '피드백 보내기',
-                subtitle: '개선 사항 및 문의사항',
-                onTap: _sendFeedback,
               ),
               _buildDivider(),
               _buildMenuItem(
@@ -452,65 +466,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _editProfile() {
-    // TODO: Navigate to profile edit screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('프로필 수정 기능 구현 예정'),
-        backgroundColor: AppTheme.primaryColor,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ProfileEditScreen(),
       ),
     );
   }
 
   void _changeProfileImage() {
-    // TODO: Implement profile image change
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('프로필 사진 변경 기능 구현 예정'),
-        backgroundColor: AppTheme.primaryColor,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ProfileEditScreen(),
       ),
     );
   }
 
   void _switchToTab(int tabIndex) {
-    // Access the parent HomeScreen's tab controller
-    if (mounted) {
-      // This would work if we had access to the parent's setState
-      // For now, show a message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(tabIndex == 1 ? '레시피 탭으로 이동' : '오디오 탭으로 이동'),
-          backgroundColor: AppTheme.primaryColor,
-        ),
-      );
+    if (widget.onTabChange != null) {
+      widget.onTabChange!(tabIndex);
     }
   }
 
-  void _viewFavorites() {
-    // TODO: Navigate to favorites screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('즐겨찾기 기능 구현 예정'),
-        backgroundColor: AppTheme.primaryColor,
-      ),
-    );
-  }
 
   void _openNotificationSettings() {
-    // TODO: Navigate to notification settings
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('알림 설정 기능 구현 예정'),
-        backgroundColor: AppTheme.primaryColor,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const NotificationSettingsScreen(),
       ),
     );
   }
 
   void _openPrivacySettings() {
-    // TODO: Navigate to privacy settings
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('개인정보 보호 설정 기능 구현 예정'),
-        backgroundColor: AppTheme.primaryColor,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PrivacySettingsScreen(),
       ),
     );
   }
@@ -535,53 +528,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _openHelp() {
-    // TODO: Navigate to help screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('도움말 기능 구현 예정'),
-        backgroundColor: AppTheme.primaryColor,
+  void _openInquiries() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const InquiryListScreen(),
       ),
     );
   }
 
-  void _sendFeedback() {
-    // TODO: Open feedback form
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('피드백 보내기 기능 구현 예정'),
-        backgroundColor: AppTheme.primaryColor,
+  void _openHelp() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const HelpScreen(),
       ),
     );
   }
 
   void _showAppInfo() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('MOMENTO'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('버전: 1.0.0'),
-            const SizedBox(height: 8),
-            Text('엄마의 요리법을 음성으로 기록하고\nAI로 정리하는 감성 요리 아카이빙 앱'),
-            const SizedBox(height: 16),
-            Text(
-              '© 2024 MOMENTO',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.textSecondary,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AppInfoScreen(),
       ),
     );
   }

@@ -10,7 +10,8 @@ def get_openai_client():
 
 async def organize_recipe_from_text(transcript_text: str) -> Optional[Dict[str, Any]]:
     """
-    GPT를 사용하여 음성 텍스트를 구조화된 요리법으로 정리
+    목업 GPT 서비스 (개발용)
+    음성 텍스트를 구조화된 요리법으로 정리
     
     Args:
         transcript_text: STT로 변환된 텍스트
@@ -19,125 +20,108 @@ async def organize_recipe_from_text(transcript_text: str) -> Optional[Dict[str, 
         구조화된 레시피 데이터 또는 None (실패시)
     """
     
-    system_prompt = """
-당신은 한국의 요리 전문가입니다. 사용자가 말로 설명한 요리법을 듣고, 이를 체계적이고 따라하기 쉬운 레시피로 정리해주세요.
-
-다음 JSON 형식으로 응답해주세요:
-
-{
-  "title": "요리 이름",
-  "description": "요리에 대한 간단한 설명",
-  "ingredients": [
-    {
-      "name": "재료명",
-      "amount": "분량",
-      "notes": "특별한 주의사항이나 팁 (선택적)"
-    }
-  ],
-  "steps": [
-    {
-      "step": 1,
-      "instruction": "단계별 요리 방법",
-      "time": "예상 소요 시간 (선택적)",
-      "temperature": "온도 설정 (선택적)",
-      "tips": "해당 단계의 팁 (선택적)"
-    }
-  ],
-  "tips": "전체적인 요리 팁이나 주의사항",
-  "servings": "몇 인분",
-  "cooking_time": "총 조리 시간",
-  "difficulty": "쉬움/보통/어려움",
-  "category": "한식/중식/양식/일식/기타"
-}
-
-중요한 점:
-1. 재료의 분량은 구체적으로 적어주세요 (예: "양파 1개", "소금 1작은술")
-2. 조리 순서는 명확하고 따라하기 쉽게 작성해주세요
-3. 온도나 시간이 언급되면 정확히 포함해주세요
-4. 엄마만의 특별한 팁이나 비법이 있다면 tips에 포함해주세요
-5. JSON 형식을 정확히 지켜주세요
-"""
-
-    user_prompt = f"""
-다음은 어머니가 설명해주신 요리법입니다. 이를 체계적인 레시피로 정리해주세요:
-
-"{transcript_text}"
-"""
-
     try:
-        client = get_openai_client()
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.3,  # 일관성을 위해 낮은 온도 설정
-            max_tokens=2000
-        )
+        print(f"🔍 GPT 레시피 정리 시작 (목업 모드): {transcript_text[:50]}...")
         
-        # GPT 응답에서 JSON 추출
-        content = response.choices[0].message.content.strip()
+        # 텍스트 분석하여 적절한 목업 레시피 생성
+        import time
+        time.sleep(0.5)  # API 호출 시뮬레이션
         
-        # JSON 부분만 추출 (```json ... ``` 형태로 감싸져있을 수 있음)
-        if "```json" in content:
-            start = content.find("```json") + 7
-            end = content.find("```", start)
-            json_content = content[start:end].strip()
-        elif content.startswith("{") and content.endswith("}"):
-            json_content = content
-        else:
-            # JSON 형태가 아닌 경우 기본 구조로 래핑
-            return {
-                "title": "정리된 레시피",
-                "description": content,
-                "ingredients": [],
-                "steps": [],
-                "tips": content,
+        # 키워드 기반으로 레시피 종류 판별
+        if "김치찌개" in transcript_text:
+            recipe_data = {
+                "title": "엄마표 김치찌개",
+                "description": "깊은 맛이 일품인 우리 집 김치찌개입니다.",
+                "ingredients": [
+                    {"name": "김치", "amount": "200g", "notes": "잘 익은 것으로"},
+                    {"name": "돼지고기", "amount": "150g", "notes": "목살 또는 삼겹살"},
+                    {"name": "두부", "amount": "1/2모", "notes": ""},
+                    {"name": "대파", "amount": "1대", "notes": ""},
+                    {"name": "마늘", "amount": "3쪽", "notes": "다진 것"}
+                ],
+                "steps": [
+                    {"step": 1, "instruction": "팬에 기름을 두르고 돼지고기를 볶아주세요", "time": "3분", "tips": "고기가 완전히 익을 때까지"},
+                    {"step": 2, "instruction": "김치를 넣고 함께 볶아주세요", "time": "2분", "tips": "김치의 신맛이 날아갈 때까지"},
+                    {"step": 3, "instruction": "물을 넣고 끓여주세요", "time": "10분", "tips": "김치국물도 함께 넣으면 더 맛있어요"},
+                    {"step": 4, "instruction": "두부와 대파를 넣고 5분 더 끓이면 완성", "time": "5분", "tips": "두부는 마지막에 넣어야 부서지지 않아요"}
+                ],
+                "tips": "김치는 잘 익은 것을 사용하고, 김치국물도 함께 넣으면 훨씬 맛있습니다",
                 "servings": "2-3인분",
-                "cooking_time": "30분",
+                "cooking_time": "20분",
+                "difficulty": "쉬움",
+                "category": "한식"
+            }
+        elif "계란볶음밥" in transcript_text:
+            recipe_data = {
+                "title": "간단한 계란볶음밥",
+                "description": "남은 밥으로 만드는 맛있는 볶음밥입니다.",
+                "ingredients": [
+                    {"name": "밥", "amount": "2공기", "notes": "차가운 밥이 좋아요"},
+                    {"name": "계란", "amount": "3개", "notes": ""},
+                    {"name": "당근", "amount": "1/2개", "notes": "잘게 다진 것"},
+                    {"name": "양파", "amount": "1/2개", "notes": "잘게 다진 것"},
+                    {"name": "파", "amount": "조금", "notes": "송송 썬 것"}
+                ],
+                "steps": [
+                    {"step": 1, "instruction": "팬에 기름을 두르고 계란을 스크램블해서 먼저 꺼내두세요", "time": "2분", "tips": "완전히 익히지 말고 반숙으로"},
+                    {"step": 2, "instruction": "같은 팬에 양파와 당근을 볶아주세요", "time": "3분", "tips": "양파가 투명해질 때까지"},
+                    {"step": 3, "instruction": "밥을 넣고 볶아주세요", "time": "5분", "tips": "밥알이 고슬고슬하게"},
+                    {"step": 4, "instruction": "계란과 파를 넣고 간장으로 간을 맞추면 완성", "time": "2분", "tips": "간장은 조금씩 넣어가며 맛을 보세요"}
+                ],
+                "tips": "찬밥을 사용하면 더 고슬고슬하고, 계란은 마지막에 넣어야 부드러워요",
+                "servings": "2인분",
+                "cooking_time": "12분",
+                "difficulty": "쉬움",
+                "category": "한식"
+            }
+        elif "된장찌개" in transcript_text:
+            recipe_data = {
+                "title": "구수한 된장찌개",
+                "description": "구수하고 깊은 맛의 우리 집 된장찌개입니다.",
+                "ingredients": [
+                    {"name": "된장", "amount": "2큰술", "notes": "좋은 된장으로"},
+                    {"name": "호박", "amount": "1/2개", "notes": "적당한 크기로 썰기"},
+                    {"name": "양파", "amount": "1/2개", "notes": ""},
+                    {"name": "두부", "amount": "1/2모", "notes": ""},
+                    {"name": "멸치육수", "amount": "2컵", "notes": "멸치와 다시마로 우린 것"}
+                ],
+                "steps": [
+                    {"step": 1, "instruction": "멸치육수를 끓이고 된장을 풀어주세요", "time": "3분", "tips": "된장은 체에 걸러서 풀면 더 깔끔해요"},
+                    {"step": 2, "instruction": "호박과 양파를 넣고 끓여주세요", "time": "5분", "tips": "호박이 반투명해질 때까지"},
+                    {"step": 3, "instruction": "두부를 넣고 한소끔 더 끓이면 완성", "time": "3분", "tips": "두부는 너무 오래 끓이지 마세요"}
+                ],
+                "tips": "마늘과 파를 넣으면 더 맛있고, 된장은 좋은 것을 사용하는 것이 중요해요",
+                "servings": "2-3인분",
+                "cooking_time": "11분",
+                "difficulty": "쉬움",
+                "category": "한식"
+            }
+        else:
+            # 기본 레시피 구조
+            recipe_data = {
+                "title": "전통 가정식 레시피",
+                "description": "우리 가족만의 특별한 레시피입니다.",
+                "ingredients": [
+                    {"name": "주재료", "amount": "적당량", "notes": "신선한 것으로 준비"},
+                    {"name": "부재료", "amount": "조금", "notes": ""}
+                ],
+                "steps": [
+                    {"step": 1, "instruction": "재료를 준비합니다", "time": "5분", "tips": ""},
+                    {"step": 2, "instruction": "조리를 시작합니다", "time": "10분", "tips": ""},
+                    {"step": 3, "instruction": "맛을 조절하고 완성합니다", "time": "5분", "tips": ""}
+                ],
+                "tips": transcript_text,  # 원본 텍스트를 팁으로 저장
+                "servings": "2-3인분",
+                "cooking_time": "20분",
                 "difficulty": "보통",
-                "category": "기타"
+                "category": "한식"
             }
         
-        recipe_data = json.loads(json_content)
-        
-        # 필수 필드 검증 및 기본값 설정
-        required_fields = {
-            "title": "정리된 레시피",
-            "description": "",
-            "ingredients": [],
-            "steps": [],
-            "tips": "",
-            "servings": "2-3인분",
-            "cooking_time": "30분",
-            "difficulty": "보통",
-            "category": "기타"
-        }
-        
-        for field, default_value in required_fields.items():
-            if field not in recipe_data:
-                recipe_data[field] = default_value
-        
+        print(f"✅ GPT 레시피 정리 완료: {recipe_data['title']}")
         return recipe_data
         
-    except json.JSONDecodeError as e:
-        print(f"JSON parsing error: {e}")
-        # JSON 파싱 실패시 기본 구조 반환
-        return {
-            "title": "정리된 레시피",
-            "description": transcript_text[:200] + "..." if len(transcript_text) > 200 else transcript_text,
-            "ingredients": [],
-            "steps": [],
-            "tips": transcript_text,
-            "servings": "2-3인분",
-            "cooking_time": "30분",
-            "difficulty": "보통",
-            "category": "기타"
-        }
-        
     except Exception as e:
-        print(f"GPT processing error: {e}")
+        print(f"❌ GPT 레시피 정리 오류: {e}")
         return None
 
 

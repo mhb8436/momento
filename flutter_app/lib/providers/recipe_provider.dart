@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/recipe.dart';
 import '../services/api/recipe_service.dart';
+import '../services/cache_service.dart';
 
 class RecipeProvider extends ChangeNotifier {
   final RecipeService _recipeService = RecipeService();
@@ -10,12 +11,14 @@ class RecipeProvider extends ChangeNotifier {
   bool _isCreating = false;
   String? _errorMessage;
   Recipe? _currentRecipe;
+  bool _isOfflineMode = false;
 
   List<Recipe> get recipes => _recipes;
   bool get isLoading => _isLoading;
   bool get isCreating => _isCreating;
   String? get errorMessage => _errorMessage;
   Recipe? get currentRecipe => _currentRecipe;
+  bool get isOfflineMode => _isOfflineMode;
 
   Future<void> loadRecipes() async {
     _setLoading(true);
@@ -23,24 +26,65 @@ class RecipeProvider extends ChangeNotifier {
 
     try {
       print('🔍 RecipeProvider loadRecipes 시작');
-      final result = await _recipeService.getRecipes();
       
-      if (result.isSuccess && result.recipes != null) {
-        _recipes = result.recipes!;
-        print('✅ 레시피 ${_recipes.length}개 로드 완료');
+      // 네트워크 상태 확인
+      final isOnline = await CacheService.isOnline();
+      _isOfflineMode = !isOnline;
+      
+      if (isOnline) {
+        print('📶 온라인 모드: 서버에서 레시피 로드');
+        await _loadRecipesFromServer();
       } else {
-        final errorMsg = result.message ?? '레시피를 불러오는데 실패했습니다.';
-        print('❌ 레시피 로드 실패: $errorMsg');
-        _setError(errorMsg);
-        _recipes = []; // Clear on error
+        print('📵 오프라인 모드: 캐시에서 레시피 로드');
+        await _loadRecipesFromCache();
       }
       
     } catch (e) {
       print('❌ RecipeProvider loadRecipes exception: $e');
       _setError('레시피를 불러오는데 실패했습니다: $e');
-      _recipes = [];
+      
+      // 오류 발생 시 캐시에서 시도
+      try {
+        await _loadRecipesFromCache();
+        _isOfflineMode = true;
+      } catch (cacheError) {
+        print('❌ 캐시에서도 로드 실패: $cacheError');
+        _recipes = [];
+      }
     } finally {
       _setLoading(false);
+    }
+  }
+  
+  Future<void> _loadRecipesFromServer() async {
+    final result = await _recipeService.getRecipes();
+    
+    if (result.isSuccess && result.recipes != null) {
+      _recipes = result.recipes!;
+      // 최신순으로 정렬 (createdAt 기준)
+      _recipes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      
+      // 서버에서 성공적으로 로드했으면 캐시에 저장
+      await CacheService.cacheRecipes(_recipes);
+      
+      print('✅ 레시피 ${_recipes.length}개 로드 완료 (서버)');
+    } else {
+      final errorMsg = result.message ?? '레시피를 불러오는데 실패했습니다.';
+      print('❌ 레시피 로드 실패: $errorMsg');
+      _setError(errorMsg);
+      
+      // 서버 로드 실패 시 캐시에서 시도
+      await _loadRecipesFromCache();
+      _isOfflineMode = true;
+    }
+  }
+  
+  Future<void> _loadRecipesFromCache() async {
+    _recipes = await CacheService.getCachedRecipes();
+    print('✅ 캐시된 레시피 ${_recipes.length}개 로드 완료');
+    
+    if (_recipes.isEmpty) {
+      _setError('오프라인 상태이며 저장된 레시피가 없습니다.');
     }
   }
 
@@ -50,6 +94,12 @@ class RecipeProvider extends ChangeNotifier {
 
     try {
       print('🔍 RecipeProvider createRecipeFromAudio 시작: $audioId');
+      
+      // 오프라인에서는 레시피 생성 불가능
+      if (await CacheService.isOffline()) {
+        _setError('오프라인 상태에서는 새로운 레시피를 생성할 수 없습니다.');
+        return false;
+      }
       
       // Note: This method will be called after audio processing is complete
       // The backend should already have the transcribed text and structured recipe data
@@ -65,6 +115,10 @@ class RecipeProvider extends ChangeNotifier {
       if (result.isSuccess && result.recipe != null) {
         _recipes.insert(0, result.recipe!);
         _currentRecipe = result.recipe!;
+        
+        // 새 레시피를 캐시에 추가
+        await CacheService.addRecipeToCache(result.recipe!);
+        
         print('✅ 레시피 생성 완료: ${result.recipe!.title}');
         notifyListeners();
         return true;
@@ -99,6 +153,12 @@ class RecipeProvider extends ChangeNotifier {
     try {
       print('🔍 RecipeProvider createRecipe 시작: $title');
       
+      // 오프라인에서는 레시피 생성 불가능
+      if (await CacheService.isOffline()) {
+        _setError('오프라인 상태에서는 새로운 레시피를 생성할 수 없습니다.');
+        return false;
+      }
+      
       final result = await _recipeService.createRecipe(
         title: title,
         description: description,
@@ -113,6 +173,10 @@ class RecipeProvider extends ChangeNotifier {
       if (result.isSuccess && result.recipe != null) {
         _recipes.insert(0, result.recipe!);
         _currentRecipe = result.recipe!;
+        
+        // 새 레시피를 캐시에 추가
+        await CacheService.addRecipeToCache(result.recipe!);
+        
         print('✅ 레시피 생성 완료: ${result.recipe!.title}');
         notifyListeners();
         return true;
@@ -143,6 +207,12 @@ class RecipeProvider extends ChangeNotifier {
         return false;
       }
 
+      // 오프라인에서는 레시피 수정 불가능
+      if (await CacheService.isOffline()) {
+        _setError('오프라인 상태에서는 레시피를 수정할 수 없습니다.');
+        return false;
+      }
+
       final result = await _recipeService.updateRecipe(
         recipeId: recipeId,
         title: updates['title'],
@@ -160,6 +230,10 @@ class RecipeProvider extends ChangeNotifier {
         if (_currentRecipe?.id == recipeId) {
           _currentRecipe = result.recipe!;
         }
+        
+        // 수정된 레시피를 캐시에도 업데이트
+        await CacheService.addRecipeToCache(result.recipe!);
+        
         print('✅ 레시피 수정 완료: ${result.recipe!.title}');
         notifyListeners();
         return true;
@@ -182,6 +256,12 @@ class RecipeProvider extends ChangeNotifier {
     try {
       print('🔍 RecipeProvider deleteRecipe 시작: $recipeId');
       
+      // 오프라인에서는 레시피 삭제 불가능
+      if (await CacheService.isOffline()) {
+        _setError('오프라인 상태에서는 레시피를 삭제할 수 없습니다.');
+        return false;
+      }
+      
       final result = await _recipeService.deleteRecipe(recipeId);
       
       if (result.isSuccess) {
@@ -189,6 +269,10 @@ class RecipeProvider extends ChangeNotifier {
         if (_currentRecipe?.id == recipeId) {
           _currentRecipe = null;
         }
+        
+        // 캐시에서도 삭제
+        await CacheService.removeRecipeFromCache(recipeId);
+        
         print('✅ 레시피 삭제 완료: $recipeId');
         notifyListeners();
         return true;
@@ -258,5 +342,26 @@ class RecipeProvider extends ChangeNotifier {
 
   void clearError() {
     _clearError();
+  }
+  
+  /// 강제로 서버에서 레시피 새로고침 (풀 투 리프레시 용)
+  Future<void> forceRefreshFromServer() async {
+    if (await CacheService.isOffline()) {
+      _setError('서버에 연결할 수 없어 새로고침할 수 없습니다.');
+      return;
+    }
+    
+    _setLoading(true);
+    _clearError();
+    _isOfflineMode = false;
+    
+    try {
+      await _loadRecipesFromServer();
+    } catch (e) {
+      print('❌ 강제 새로고침 실패: $e');
+      _setError('새로고침에 실패했습니다: $e');
+    } finally {
+      _setLoading(false);
+    }
   }
 }

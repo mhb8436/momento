@@ -17,10 +17,12 @@ router = APIRouter(prefix="/uploads", tags=["uploads"])
 # 업로드 디렉토리 설정
 UPLOAD_DIR = Path("uploads")
 IMAGES_DIR = UPLOAD_DIR / "images"
+PROFILES_DIR = UPLOAD_DIR / "profiles"
 
 # 디렉토리 생성
 UPLOAD_DIR.mkdir(exist_ok=True)
 IMAGES_DIR.mkdir(exist_ok=True)
+PROFILES_DIR.mkdir(exist_ok=True)
 
 # 허용된 이미지 확장자
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
@@ -128,6 +130,21 @@ async def get_image(filename: str):
     
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="이미지를 찾을 수 없습니다.")
+    
+    return FileResponse(
+        path=file_path, 
+        media_type="image/jpeg",
+        headers={"Cache-Control": "max-age=86400"}  # 1일 캐시
+    )
+
+
+@router.get("/profiles/{filename}")
+async def get_profile_image(filename: str):
+    """프로필 이미지 파일 조회"""
+    file_path = PROFILES_DIR / filename
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="프로필 이미지를 찾을 수 없습니다.")
     
     return FileResponse(
         path=file_path, 

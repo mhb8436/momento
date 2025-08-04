@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(source:*)",
-      "Bash(alembic upgrade:*)"
+      "Bash(alembic upgrade:*)",
+      "Bash(alembic revision:*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(touch:*)",
+      "Bash(uvicorn:*)",
+      "Bash(pkill:*)"
     ],
     "deny": []
   }

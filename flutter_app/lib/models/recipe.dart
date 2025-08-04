@@ -1,11 +1,16 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:hive/hive.dart';
 
 part 'recipe.g.dart';
 
 @JsonSerializable()
+@HiveType(typeId: 0)
 class RecipeIngredient {
+  @HiveField(0)
   final String name;
+  @HiveField(1)
   final String amount;
+  @HiveField(2)
   final String? notes;
 
   const RecipeIngredient({
@@ -20,11 +25,17 @@ class RecipeIngredient {
 }
 
 @JsonSerializable()
+@HiveType(typeId: 1)
 class RecipeStep {
+  @HiveField(0)
   final int step;
+  @HiveField(1)
   final String instruction;
+  @HiveField(2)
   final String? time;
+  @HiveField(3)
   final String? temperature;
+  @HiveField(4)
   final String? tips;
 
   const RecipeStep({
@@ -41,27 +52,43 @@ class RecipeStep {
 }
 
 @JsonSerializable()
+@HiveType(typeId: 2)
 class Recipe {
+  @HiveField(0)
   final String id;
   @JsonKey(name: 'user_id')
+  @HiveField(1)
   final String userId;
   @JsonKey(name: 'source_audio_id')
+  @HiveField(2)
   final String? sourceAudioId;
+  @HiveField(3)
   final String title;
+  @HiveField(4)
   final String? description;
+  @HiveField(5)
   final List<RecipeIngredient>? ingredients;
+  @HiveField(6)
   final List<RecipeStep>? steps;
+  @HiveField(7)
   final String? tips;
+  @HiveField(8)
   final String? servings;
   @JsonKey(name: 'cooking_time')
+  @HiveField(9)
   final String? cookingTime;
+  @HiveField(10)
   final String? difficulty;
+  @HiveField(11)
   final String? category;
   @JsonKey(name: 'image_url')
+  @HiveField(12)
   final String? imageUrl;
   @JsonKey(name: 'created_at')
+  @HiveField(13)
   final DateTime createdAt;
   @JsonKey(name: 'updated_at')
+  @HiveField(14)
   final DateTime updatedAt;
 
   const Recipe({
