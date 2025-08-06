@@ -9,6 +9,7 @@ from app.schemas.audio import AudioFileResponse, AudioProcessRequest, AudioProce
 from app.utils.dependencies import get_current_active_user
 from app.services.storage import save_uploaded_file
 from app.services.stt import transcribe_audio, get_audio_duration
+from app.services.audio_processing_service import audio_processing_service
 
 router = APIRouter()
 
@@ -241,4 +242,64 @@ async def get_audio_transcript(
         "audio_id": str(audio_file.id),
         "transcript_text": audio_file.transcript_text,
         "processing_status": audio_file.processing_status
+    }
+
+
+@router.post("/upload-chunked", response_model=AudioFileResponse)
+async def upload_audio_chunked(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """대용량 오디오 파일 청크 업로드"""
+    
+    print(f"🔍 청크 업로드 시작: {file.filename}, Content-Type: {file.content_type}")
+    
+    try:
+        # 진행률 콜백 함수
+        async def progress_callback(chunk_size: int, total_size: int):
+            print(f"📊 업로드 진행률: {total_size / (1024*1024):.1f}MB")
+        
+        # 청크 단위 업로드 처리
+        audio_file = await audio_processing_service.process_chunked_upload(
+            file=file,
+            user=current_user,
+            db=db,
+            chunk_callback=progress_callback
+        )
+        
+        print(f"✅ 청크 업로드 완료: {audio_file.id}")
+        
+        return AudioFileResponse(
+            id=str(audio_file.id),
+            user_id=str(audio_file.user_id),
+            file_name=audio_file.filename,
+            file_size=audio_file.file_size,
+            duration=audio_file.duration,
+            transcript_text=None,  # 아직 처리되지 않음
+            processing_status="uploaded",
+            created_at=audio_file.created_at
+        )
+        
+    except Exception as e:
+        print(f"❌ 청크 업로드 실패: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"청크 업로드 실패: {str(e)}"
+        )
+
+
+@router.get("/upload-limits")
+async def get_upload_limits():
+    """업로드 제한 정보 조회"""
+    return {
+        "max_file_size_mb": audio_processing_service.MAX_FILE_SIZE // (1024 * 1024),
+        "max_chunk_size_mb": audio_processing_service.MAX_CHUNK_SIZE // (1024 * 1024),
+        "supported_formats": list(audio_processing_service.SUPPORTED_FORMATS),
+        "max_duration_minutes": 30,
+        "recommended_settings": {
+            "sample_rate": "16kHz",
+            "bit_rate": "64kbps",
+            "codec": "AAC"
+        }
     }

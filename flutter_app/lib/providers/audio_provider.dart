@@ -3,8 +3,10 @@ import 'package:record/record.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'dart:async';
 import '../models/audio_file.dart';
 import '../services/api/audio_service.dart';
+import '../services/audio/audio_compression_service.dart';
 import 'recipe_provider.dart';
 
 class AudioProvider extends ChangeNotifier {
@@ -16,18 +18,24 @@ class AudioProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _isRecording = false;
   bool _isUploading = false;
+  double _uploadProgress = 0.0;
   String? _errorMessage;
   AudioFile? _currentProcessingAudio;
   String? _currentRecordingPath;
   bool _hasRecording = false;
+  int _recordingDurationSeconds = 0;
+  int _estimatedFileSize = 0;
 
   List<AudioFile> get audioFiles => _audioFiles;
   bool get isLoading => _isLoading;
   bool get isRecording => _isRecording;
   bool get isUploading => _isUploading;
+  double get uploadProgress => _uploadProgress;
   String? get errorMessage => _errorMessage;
   AudioFile? get currentProcessingAudio => _currentProcessingAudio;
   bool get hasRecording => _hasRecording;
+  int get recordingDurationSeconds => _recordingDurationSeconds;
+  int get estimatedFileSize => _estimatedFileSize;
 
   void setRecipeProvider(RecipeProvider recipeProvider) {
     _recipeProvider = recipeProvider;
@@ -369,6 +377,133 @@ class AudioProvider extends ChangeNotifier {
       debugPrint('❌ 권한 확인 오류: $e');
       return false;
     }
+  }
+
+  /// 대용량 파일 업로드 (진행률 포함)
+  Future<bool> uploadLargeAudioFile(String filePath) async {
+    _setUploading(true);
+    _uploadProgress = 0.0;
+    _clearError();
+
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        _setError('파일을 찾을 수 없습니다.');
+        return false;
+      }
+
+      final fileSize = await file.length();
+      
+      // 파일 크기 검사 및 검증
+      try {
+        final validatedFile = await AudioCompressionService.validateAudioFile(file);
+        return await _uploadWithProgress(validatedFile.path);
+      } catch (e) {
+        _setError('파일 검증에 실패했습니다: $e');
+        return false;
+      }
+    } catch (e) {
+      _setError('파일 업로드에 실패했습니다: $e');
+      return false;
+    } finally {
+      _setUploading(false);
+      _uploadProgress = 0.0;
+    }
+  }
+
+  /// 진행률을 포함한 업로드
+  Future<bool> _uploadWithProgress(String filePath) async {
+    try {
+      // 청크 단위 업로드 시뮬레이션
+      final file = File(filePath);
+      final fileSize = await file.length();
+      final chunks = await AudioCompressionService.splitIntoChunks(file);
+      
+      int uploadedSize = 0;
+      
+      for (int i = 0; i < chunks.length; i++) {
+        await Future.delayed(const Duration(milliseconds: 100)); // 시뮬레이션
+        
+        uploadedSize += chunks[i].length;
+        _uploadProgress = uploadedSize / fileSize;
+        notifyListeners();
+        
+        // 업로드 취소 체크 (필요시)
+        if (!_isUploading) {
+          throw Exception('업로드가 취소되었습니다.');
+        }
+      }
+
+      // 실제 서버 업로드 (청크 업로드 API 사용)
+      final uploadResult = await _audioService.uploadAudioChunked(filePath);
+      
+      if (!uploadResult.isSuccess) {
+        _setError(uploadResult.message ?? '서버 업로드에 실패했습니다.');
+        return false;
+      }
+
+      // 업로드된 파일을 목록에 추가
+      if (uploadResult.audioFile != null) {
+        _audioFiles.insert(0, uploadResult.audioFile!);
+        notifyListeners();
+      }
+
+      return true;
+    } catch (e) {
+      _setError('업로드 처리 중 오류: $e');
+      return false;
+    }
+  }
+
+  /// 실시간 녹음 용량 모니터링
+  void startRecordingMonitoring() {
+    if (_currentRecordingPath == null) return;
+    
+    // 1초마다 파일 크기 체크
+    Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!_isRecording) {
+        timer.cancel();
+        return;
+      }
+      
+      _updateRecordingStats();
+    });
+  }
+
+  /// 녹음 통계 업데이트
+  Future<void> _updateRecordingStats() async {
+    if (_currentRecordingPath == null) return;
+    
+    try {
+      _recordingDurationSeconds++;
+      _estimatedFileSize = AudioCompressionService.estimateFileSize(
+        durationSeconds: _recordingDurationSeconds,
+      );
+      
+      // 최대 용량 초과 체크
+      if (await AudioCompressionService.shouldStopRecording(_currentRecordingPath!)) {
+        await stopRecording();
+        _setError('최대 녹음 시간(30분) 또는 용량(50MB)에 도달했습니다.');
+      }
+      
+      notifyListeners();
+    } catch (e) {
+      print('녹음 통계 업데이트 실패: $e');
+    }
+  }
+
+  /// 업로드 취소
+  void cancelUpload() {
+    _setUploading(false);
+    _uploadProgress = 0.0;
+    notifyListeners();
+  }
+
+  /// 녹음 통계 초기화
+  void _resetRecordingStats() {
+    _recordingDurationSeconds = 0;
+    _estimatedFileSize = 0;
+    notifyListeners();
   }
 
   // Dispose resources

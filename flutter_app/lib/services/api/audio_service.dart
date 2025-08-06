@@ -159,6 +159,90 @@ class AudioService {
       return AudioListResult.failure(message: '오디오 파일 목록을 가져오는 중 오류가 발생했습니다.');
     }
   }
+
+  /// 대용량 파일 청크 업로드
+  Future<AudioUploadChunkedResult> uploadAudioChunked(String filePath) async {
+    try {
+      print('🔍 AudioService 청크 업로드 시작: $filePath');
+      
+      final file = File(filePath);
+      if (!await file.exists()) {
+        return AudioUploadChunkedResult.failure(message: '파일을 찾을 수 없습니다.');
+      }
+
+      final fileName = filePath.split('/').last;
+      final fileExtension = fileName.split('.').last.toLowerCase();
+      
+      // 파일 확장자에 따른 MIME type 설정
+      MediaType? mediaType;
+      switch (fileExtension) {
+        case 'wav':
+          mediaType = MediaType('audio', 'wav');
+          break;
+        case 'mp3':
+          mediaType = MediaType('audio', 'mpeg');
+          break;
+        case 'm4a':
+          mediaType = MediaType('audio', 'mp4');
+          break;
+        case 'aac':
+          mediaType = MediaType('audio', 'aac');
+          break;
+        default:
+          mediaType = MediaType('audio', 'wav');
+      }
+      
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          filePath,
+          filename: fileName,
+          contentType: mediaType,
+        ),
+      });
+
+      print('🔍 청크 업로드 API 요청 시작');
+      final response = await _apiService.dio.post(
+        '${AppConfig.baseUrl}/audio/upload-chunked',
+        data: formData,
+        options: Options(
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        print('✅ 청크 업로드 성공');
+        final audioFile = AudioFile.fromJson(response.data);
+        return AudioUploadChunkedResult.success(audioFile: audioFile);
+      } else {
+        final errorMsg = response.data['detail'] ?? '청크 업로드에 실패했습니다.';
+        print('❌ 청크 업로드 오류: $errorMsg');
+        return AudioUploadChunkedResult.failure(message: errorMsg);
+      }
+    } on ApiException catch (e) {
+      print('❌ 청크 업로드 API 예외: ${e.message}');
+      return AudioUploadChunkedResult.failure(message: e.message);
+    } catch (e) {
+      print('❌ 청크 업로드 예상치 못한 오류: $e');
+      return AudioUploadChunkedResult.failure(message: '청크 업로드 중 오류가 발생했습니다.');
+    }
+  }
+
+  /// 업로드 제한 정보 조회
+  Future<Map<String, dynamic>?> getUploadLimits() async {
+    try {
+      final response = await _apiService.dio.get('${AppConfig.baseUrl}/audio/upload-limits');
+      
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('❌ 업로드 제한 정보 조회 실패: $e');
+      return null;
+    }
+  }
 }
 
 // Audio Service Result Classes
@@ -246,5 +330,31 @@ class AudioListSuccess extends AudioListResult {
 
 class AudioListFailure extends AudioListResult {
   AudioListFailure({required String message})
+      : super._(isSuccess: false, message: message);
+}
+
+// 청크 업로드 결과 클래스
+abstract class AudioUploadChunkedResult {
+  final bool isSuccess;
+  final String? message;
+  final AudioFile? audioFile;
+
+  AudioUploadChunkedResult._({
+    required this.isSuccess,
+    this.message,
+    this.audioFile,
+  });
+
+  factory AudioUploadChunkedResult.success({required AudioFile audioFile}) = AudioUploadChunkedSuccess;
+  factory AudioUploadChunkedResult.failure({required String message}) = AudioUploadChunkedFailure;
+}
+
+class AudioUploadChunkedSuccess extends AudioUploadChunkedResult {
+  AudioUploadChunkedSuccess({required AudioFile audioFile}) 
+      : super._(isSuccess: true, audioFile: audioFile);
+}
+
+class AudioUploadChunkedFailure extends AudioUploadChunkedResult {
+  AudioUploadChunkedFailure({required String message}) 
       : super._(isSuccess: false, message: message);
 }
