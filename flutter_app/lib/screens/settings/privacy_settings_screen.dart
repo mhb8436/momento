@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../config/theme.dart';
-import '../../providers/auth_provider.dart';
-import '../../widgets/common/custom_button.dart';
 import 'password_change_screen.dart';
 import 'account_deletion_screen.dart';
 

@@ -1,7 +1,3 @@
-import 'dart:io';
-import 'package:dio/dio.dart';
-import 'package:http_parser/http_parser.dart';
-import '../../models/audio_file.dart';
 import '../../config/app_config.dart';
 import 'api_service.dart';
 
@@ -12,349 +8,77 @@ class AudioService {
 
   final ApiService _apiService = ApiService();
 
-  Future<AudioUploadResult> uploadAudio(String filePath) async {
+  /// Process transcribed text to recipe (new client-side STT flow)
+  Future<TextProcessResult> processTranscript(String transcript) async {
     try {
-      print('🔍 AudioService uploadAudio 시작: $filePath');
-      
-      final file = File(filePath);
-      if (!await file.exists()) {
-        return AudioUploadResult.failure(message: '파일을 찾을 수 없습니다.');
-      }
-
-      final fileName = filePath.split('/').last;
-      final fileExtension = fileName.split('.').last.toLowerCase();
-      
-      // 파일 확장자에 따른 MIME type 설정
-      MediaType? mediaType;
-      switch (fileExtension) {
-        case 'wav':
-          mediaType = MediaType('audio', 'wav');
-          break;
-        case 'mp3':
-          mediaType = MediaType('audio', 'mpeg');
-          break;
-        case 'm4a':
-          mediaType = MediaType('audio', 'mp4');
-          break;
-        case 'aac':
-          mediaType = MediaType('audio', 'aac');
-          break;
-        default:
-          mediaType = MediaType('audio', 'wav'); // 기본값
-      }
-      
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
-          filePath,
-          filename: fileName,
-          contentType: mediaType,
-        ),
-      });
-
-      print('🔍 API URL: ${AppConfig.baseUrl}${AppConfig.audioEndpoint}/upload');
-      print('🔍 파일명: $fileName, 파일 크기: ${await file.length()} bytes');
-      print('🔍 MIME Type: ${mediaType.toString()}');
+      print('🔍 AudioService processTranscript 시작');
+      print('🔍 API URL: ${AppConfig.baseUrl}${AppConfig.audioEndpoint}/process-text');
       
       final response = await _apiService.post(
-        '${AppConfig.audioEndpoint}/upload',
-        data: formData,
-      );
-
-      print('🔍 업로드 API 응답: status=${response.statusCode}, data=${response.data}');
-
-      if (response.statusCode == 200) {
-        final audioId = response.data['id'] as String?;
-        if (audioId != null) {
-          return AudioUploadResult.success(audioId: audioId);
-        } else {
-          print('❌ 응답에서 ID를 찾을 수 없음: ${response.data}');
-          return AudioUploadResult.failure(message: '서버 응답에서 오디오 ID를 찾을 수 없습니다.');
-        }
-      } else {
-        final errorMsg = response.data['detail'] ?? '파일 업로드에 실패했습니다.';
-        print('❌ 업로드 API 오류 응답: $errorMsg');
-        return AudioUploadResult.failure(message: errorMsg);
-      }
-    } on ApiException catch (e) {
-      print('❌ AudioService uploadAudio ApiException: ${e.message} (status: ${e.statusCode})');
-      return AudioUploadResult.failure(message: e.message);
-    } catch (e) {
-      print('❌ AudioService uploadAudio Exception: $e');
-      return AudioUploadResult.failure(message: '파일 업로드 중 오류가 발생했습니다: $e');
-    }
-  }
-
-  Future<AudioProcessResult> processAudio(String audioId) async {
-    try {
-      print('🔍 AudioService processAudio 시작: $audioId');
-      print('🔍 API URL: ${AppConfig.baseUrl}${AppConfig.audioEndpoint}/process');
-      
-      final response = await _apiService.post(
-        '${AppConfig.audioEndpoint}/process',
+        '${AppConfig.audioEndpoint}/process-text',
         data: {
-          'audio_id': audioId,
+          'transcript': transcript,
         },
       );
 
-      print('🔍 처리 API 응답: status=${response.statusCode}, data=${response.data}');
+      print('🔍 텍스트 처리 API 응답: status=${response.statusCode}, data=${response.data}');
 
       if (response.statusCode == 200) {
         final recipeId = response.data['recipe_id'] as String?;
-        final transcriptText = response.data['transcript_text'] as String?;
         
-        return AudioProcessResult.success(
+        return TextProcessResult.success(
           recipeId: recipeId,
-          transcriptText: transcriptText,
+          transcript: transcript,
         );
       } else {
-        final errorMsg = response.data['detail'] ?? '음성 처리에 실패했습니다.';
-        print('❌ 처리 API 오류 응답: $errorMsg');
-        return AudioProcessResult.failure(message: errorMsg);
+        final errorMsg = response.data['detail'] ?? '텍스트 처리에 실패했습니다.';
+        print('❌ 텍스트 처리 API 오류 응답: $errorMsg');
+        return TextProcessResult.failure(message: errorMsg);
       }
     } on ApiException catch (e) {
-      print('❌ AudioService processAudio ApiException: ${e.message} (status: ${e.statusCode})');
-      return AudioProcessResult.failure(message: e.message);
+      print('❌ AudioService processTranscript ApiException: ${e.message} (status: ${e.statusCode})');
+      return TextProcessResult.failure(message: e.message);
     } catch (e) {
-      print('❌ AudioService processAudio Exception: $e');
-      return AudioProcessResult.failure(message: '음성 처리 중 오류가 발생했습니다: $e');
-    }
-  }
-
-  Future<AudioListResult> getAudioFiles() async {
-    try {
-      print('🔍 AudioService getAudioFiles 시작');
-      
-      final response = await _apiService.get('${AppConfig.audioEndpoint}/');
-
-      print('🔍 오디오 목록 API 응답: status=${response.statusCode}, data=${response.data}');
-
-      if (response.statusCode == 200) {
-        final List<dynamic> audioData = response.data is List 
-            ? response.data 
-            : response.data['audio_files'] ?? [];
-        
-        print('🔍 파싱할 오디오 데이터 개수: ${audioData.length}');
-        
-        final List<AudioFile> audioFiles = [];
-        for (int i = 0; i < audioData.length; i++) {
-          try {
-            final audioFile = AudioFile.fromJson(audioData[i]);
-            audioFiles.add(audioFile);
-          } catch (e) {
-            print('❌ 오디오 파일 파싱 오류 (인덱스 $i): $e');
-            print('   데이터: ${audioData[i]}');
-          }
-        }
-        
-        print('✅ 오디오 파일 ${audioFiles.length}개 로드 완료');
-        return AudioListResult.success(audioFiles: audioFiles);
-      } else {
-        final errorMsg = response.data['detail'] ?? '오디오 파일 목록을 가져올 수 없습니다.';
-        print('❌ 오디오 목록 API 오류 응답: $errorMsg');
-        return AudioListResult.failure(message: errorMsg);
-      }
-    } on ApiException catch (e) {
-      return AudioListResult.failure(message: e.message);
-    } catch (e) {
-      return AudioListResult.failure(message: '오디오 파일 목록을 가져오는 중 오류가 발생했습니다.');
-    }
-  }
-
-  /// 대용량 파일 청크 업로드
-  Future<AudioUploadChunkedResult> uploadAudioChunked(String filePath) async {
-    try {
-      print('🔍 AudioService 청크 업로드 시작: $filePath');
-      
-      final file = File(filePath);
-      if (!await file.exists()) {
-        return AudioUploadChunkedResult.failure(message: '파일을 찾을 수 없습니다.');
-      }
-
-      final fileName = filePath.split('/').last;
-      final fileExtension = fileName.split('.').last.toLowerCase();
-      
-      // 파일 확장자에 따른 MIME type 설정
-      MediaType? mediaType;
-      switch (fileExtension) {
-        case 'wav':
-          mediaType = MediaType('audio', 'wav');
-          break;
-        case 'mp3':
-          mediaType = MediaType('audio', 'mpeg');
-          break;
-        case 'm4a':
-          mediaType = MediaType('audio', 'mp4');
-          break;
-        case 'aac':
-          mediaType = MediaType('audio', 'aac');
-          break;
-        default:
-          mediaType = MediaType('audio', 'wav');
-      }
-      
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
-          filePath,
-          filename: fileName,
-          contentType: mediaType,
-        ),
-      });
-
-      print('🔍 청크 업로드 API 요청 시작');
-      final response = await _apiService.dio.post(
-        '${AppConfig.baseUrl}/audio/upload-chunked',
-        data: formData,
-        options: Options(
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
-      );
-
-      if (response.statusCode == 200) {
-        print('✅ 청크 업로드 성공');
-        final audioFile = AudioFile.fromJson(response.data);
-        return AudioUploadChunkedResult.success(audioFile: audioFile);
-      } else {
-        final errorMsg = response.data['detail'] ?? '청크 업로드에 실패했습니다.';
-        print('❌ 청크 업로드 오류: $errorMsg');
-        return AudioUploadChunkedResult.failure(message: errorMsg);
-      }
-    } on ApiException catch (e) {
-      print('❌ 청크 업로드 API 예외: ${e.message}');
-      return AudioUploadChunkedResult.failure(message: e.message);
-    } catch (e) {
-      print('❌ 청크 업로드 예상치 못한 오류: $e');
-      return AudioUploadChunkedResult.failure(message: '청크 업로드 중 오류가 발생했습니다.');
-    }
-  }
-
-  /// 업로드 제한 정보 조회
-  Future<Map<String, dynamic>?> getUploadLimits() async {
-    try {
-      final response = await _apiService.dio.get('${AppConfig.baseUrl}/audio/upload-limits');
-      
-      if (response.statusCode == 200) {
-        return response.data as Map<String, dynamic>;
-      }
-      return null;
-    } catch (e) {
-      print('❌ 업로드 제한 정보 조회 실패: $e');
-      return null;
+      print('❌ AudioService processTranscript Exception: $e');
+      return TextProcessResult.failure(message: '텍스트 처리 중 오류가 발생했습니다: $e');
     }
   }
 }
 
-// Audio Service Result Classes
-abstract class AudioUploadResult {
-  final bool isSuccess;
-  final String? message;
-  final String? audioId;
-
-  AudioUploadResult._({
-    required this.isSuccess,
-    this.message,
-    this.audioId,
-  });
-
-  factory AudioUploadResult.success({required String audioId}) = AudioUploadSuccess;
-  factory AudioUploadResult.failure({required String message}) = AudioUploadFailure;
-}
-
-class AudioUploadSuccess extends AudioUploadResult {
-  AudioUploadSuccess({required String audioId}) 
-      : super._(isSuccess: true, audioId: audioId);
-}
-
-class AudioUploadFailure extends AudioUploadResult {
-  AudioUploadFailure({required String message}) 
-      : super._(isSuccess: false, message: message);
-}
-
-abstract class AudioProcessResult {
+// Text Processing Result Classes (for client-side STT)
+abstract class TextProcessResult {
   final bool isSuccess;
   final String? message;
   final String? recipeId;
-  final String? transcriptText;
+  final String? transcript;
 
-  AudioProcessResult._({
+  TextProcessResult._({
     required this.isSuccess,
     this.message,
     this.recipeId,
-    this.transcriptText,
+    this.transcript,
   });
 
-  factory AudioProcessResult.success({
+  factory TextProcessResult.success({
     String? recipeId,
-    String? transcriptText,
-  }) = AudioProcessSuccess;
+    required String transcript,
+  }) = TextProcessSuccess;
   
-  factory AudioProcessResult.failure({required String message}) = AudioProcessFailure;
+  factory TextProcessResult.failure({required String message}) = TextProcessFailure;
 }
 
-class AudioProcessSuccess extends AudioProcessResult {
-  AudioProcessSuccess({
+class TextProcessSuccess extends TextProcessResult {
+  TextProcessSuccess({
     String? recipeId,
-    String? transcriptText,
+    required String transcript,
   }) : super._(
          isSuccess: true,
          recipeId: recipeId,
-         transcriptText: transcriptText,
+         transcript: transcript,
        );
 }
 
-class AudioProcessFailure extends AudioProcessResult {
-  AudioProcessFailure({required String message})
-      : super._(isSuccess: false, message: message);
-}
-
-abstract class AudioListResult {
-  final bool isSuccess;
-  final String? message;
-  final List<AudioFile>? audioFiles;
-
-  AudioListResult._({
-    required this.isSuccess,
-    this.message,
-    this.audioFiles,
-  });
-
-  factory AudioListResult.success({required List<AudioFile> audioFiles}) = AudioListSuccess;
-  factory AudioListResult.failure({required String message}) = AudioListFailure;
-}
-
-class AudioListSuccess extends AudioListResult {
-  AudioListSuccess({required List<AudioFile> audioFiles})
-      : super._(isSuccess: true, audioFiles: audioFiles);
-}
-
-class AudioListFailure extends AudioListResult {
-  AudioListFailure({required String message})
-      : super._(isSuccess: false, message: message);
-}
-
-// 청크 업로드 결과 클래스
-abstract class AudioUploadChunkedResult {
-  final bool isSuccess;
-  final String? message;
-  final AudioFile? audioFile;
-
-  AudioUploadChunkedResult._({
-    required this.isSuccess,
-    this.message,
-    this.audioFile,
-  });
-
-  factory AudioUploadChunkedResult.success({required AudioFile audioFile}) = AudioUploadChunkedSuccess;
-  factory AudioUploadChunkedResult.failure({required String message}) = AudioUploadChunkedFailure;
-}
-
-class AudioUploadChunkedSuccess extends AudioUploadChunkedResult {
-  AudioUploadChunkedSuccess({required AudioFile audioFile}) 
-      : super._(isSuccess: true, audioFile: audioFile);
-}
-
-class AudioUploadChunkedFailure extends AudioUploadChunkedResult {
-  AudioUploadChunkedFailure({required String message}) 
+class TextProcessFailure extends TextProcessResult {
+  TextProcessFailure({required String message})
       : super._(isSuccess: false, message: message);
 }

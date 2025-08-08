@@ -76,3 +76,5 @@ flutter_app/android/local.properties
 # Generated files
 flutter_app/lib/**/*.g.dart
 flutter_app/lib/**/*.freezed.dart
+
+**/ios/Runner/GoogleService-Info.plist

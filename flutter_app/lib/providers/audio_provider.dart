@@ -1,257 +1,252 @@
 import 'package:flutter/foundation.dart';
-import 'package:record/record.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import 'dart:async';
-import '../models/audio_file.dart';
 import '../services/api/audio_service.dart';
-import '../services/audio/audio_compression_service.dart';
-import 'recipe_provider.dart';
+import '../services/audio/stt_service.dart';
 
 class AudioProvider extends ChangeNotifier {
-  final AudioRecorder _audioRecord = AudioRecorder();
   final AudioService _audioService = AudioService();
-  RecipeProvider? _recipeProvider;
+  final STTService _sttService = STTService();
 
-  List<AudioFile> _audioFiles = [];
   bool _isLoading = false;
-  bool _isRecording = false;
-  bool _isUploading = false;
-  double _uploadProgress = 0.0;
+  bool _isListening = false;
+  bool _isProcessing = false;
   String? _errorMessage;
-  AudioFile? _currentProcessingAudio;
-  String? _currentRecordingPath;
-  bool _hasRecording = false;
-  int _recordingDurationSeconds = 0;
-  int _estimatedFileSize = 0;
+  String _currentTranscript = '';  // 현재 세션의 인식 결과
+  String _accumulatedTranscript = '';  // 누적된 전체 텍스트
+  StreamSubscription? _transcriptSubscription;
+  StreamSubscription? _listeningSubscription;
+  StreamSubscription? _errorSubscription;
 
-  List<AudioFile> get audioFiles => _audioFiles;
   bool get isLoading => _isLoading;
-  bool get isRecording => _isRecording;
-  bool get isUploading => _isUploading;
-  double get uploadProgress => _uploadProgress;
+  bool get isListening => _isListening;
+  bool get isProcessing => _isProcessing;
   String? get errorMessage => _errorMessage;
-  AudioFile? get currentProcessingAudio => _currentProcessingAudio;
-  bool get hasRecording => _hasRecording;
-  int get recordingDurationSeconds => _recordingDurationSeconds;
-  int get estimatedFileSize => _estimatedFileSize;
+  String get currentTranscript => _currentTranscript;
+  String get accumulatedTranscript => _accumulatedTranscript;
+  bool get hasAccumulatedText => _accumulatedTranscript.isNotEmpty;
 
-  void setRecipeProvider(RecipeProvider recipeProvider) {
-    _recipeProvider = recipeProvider;
-  }
-
-  Future<void> loadAudioFiles() async {
-    _setLoading(true);
-    _clearError();
-
-    try {
-      print('🔍 AudioProvider loadAudioFiles 시작');
-      final result = await _audioService.getAudioFiles();
-
-      if (result.isSuccess && result.audioFiles != null) {
-        _audioFiles = result.audioFiles!;
-        print('✅ 오디오 파일 ${_audioFiles.length}개 로드 완료');
-      } else {
-        final errorMsg = result.message ?? '오디오 파일을 불러오는데 실패했습니다.';
-        print('❌ 오디오 파일 로드 실패: $errorMsg');
-        _setError(errorMsg);
-        _audioFiles = []; // Clear on error
-      }
-    } catch (e) {
-      print('❌ AudioProvider loadAudioFiles exception: $e');
-      _setError('오디오 파일을 불러오는데 실패했습니다: $e');
-      _audioFiles = [];
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<bool> startRecording() async {
+  /// Initialize STT service and set up streams
+  Future<bool> initializeSTT() async {
     try {
       _clearError();
-
-      // Check microphone permission
-      if (!await _checkMicrophonePermission()) {
-        _setError('마이크 권한이 필요합니다.');
+      debugPrint('🔍 STT 서비스 초기화 시작');
+      
+      final initialized = await _sttService.initialize();
+      if (!initialized) {
+        _setError('음성 인식 서비스를 초기화할 수 없습니다.');
         return false;
       }
-
-      // Check if device has microphone
-      if (!await _audioRecord.hasPermission()) {
-        _setError('마이크 권한이 거부되었습니다.');
-        return false;
-      }
-
-      // Create directory for recordings
-      final directory = await getApplicationDocumentsDirectory();
-      final recordingsDir = Directory('${directory.path}/recordings');
-      if (!await recordingsDir.exists()) {
-        await recordingsDir.create(recursive: true);
-      }
-
-      // Generate unique filename
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      _currentRecordingPath = '${recordingsDir.path}/recording_$timestamp.m4a';
-
-      // Start recording
-      await _audioRecord.start(
-        const RecordConfig(
-          encoder: AudioEncoder.aacLc,
-          bitRate: 128000,
-          sampleRate: 44100,
-        ),
-        path: _currentRecordingPath!,
-      );
-
-      _isRecording = true;
-      _hasRecording = false;
-      notifyListeners();
-
-      debugPrint('🎙️ 녹음 시작: $_currentRecordingPath');
+      
+      // Set up streams for real-time updates
+      _transcriptSubscription = _sttService.transcriptStream.listen((transcript) {
+        _currentTranscript = transcript;
+        notifyListeners();
+      });
+      
+      _listeningSubscription = _sttService.listeningStream.listen((listening) {
+        _isListening = listening;
+        notifyListeners();
+      });
+      
+      _errorSubscription = _sttService.errorStream.listen((error) {
+        _setError(error);
+      });
+      
+      debugPrint('✅ STT 서비스 초기화 완료');
       return true;
     } catch (e) {
-      _setError('녹음을 시작할 수 없습니다: $e');
-      debugPrint('❌ 녹음 시작 오류: $e');
+      _setError('음성 인식 서비스 초기화 실패: $e');
+      debugPrint('❌ STT 초기화 오류: $e');
       return false;
     }
   }
 
-  Future<String?> stopRecording() async {
+  /// Get STT service status
+  bool get isSTTReady => _sttService.isReady;
+
+  /// Get model information for UI
+  Future<String> getSTTModelInfo() async {
+    return await _sttService.getModelInfo();
+  }
+
+  /// Start real-time speech recognition
+  Future<bool> startListening() async {
+    try {
+      _clearError();
+      
+      // Auto-accumulate current transcript if it exists
+      if (_currentTranscript.isNotEmpty) {
+        if (_accumulatedTranscript.isNotEmpty) {
+          _accumulatedTranscript += ' $_currentTranscript';
+        } else {
+          _accumulatedTranscript = _currentTranscript;
+        }
+        debugPrint('📝 자동 텍스트 추가됨. 누적 길이: ${_accumulatedTranscript.length}');
+        debugPrint('📝 누적 내용: ${_accumulatedTranscript.length > 100 ? _accumulatedTranscript.substring(0, 100) + "..." : _accumulatedTranscript}');
+      }
+      
+      // Initialize STT service if not already done
+      if (!_sttService.isReady) {
+        final initialized = await initializeSTT();
+        if (!initialized) {
+          return false;
+        }
+      }
+
+      debugPrint('🎤 실시간 음성 인식 시작');
+      final started = await _sttService.startListening();
+      
+      if (started) {
+        _currentTranscript = '';
+        debugPrint('✅ 음성 인식 시작 성공');
+        return true;
+      } else {
+        _setError('음성 인식을 시작할 수 없습니다.');
+        return false;
+      }
+    } catch (e) {
+      _setError('음성 인식 시작 실패: $e');
+      debugPrint('❌ 음성 인식 시작 오류: $e');
+      return false;
+    }
+  }
+
+  /// Stop speech recognition and get final transcript
+  Future<String?> stopListening() async {
     try {
       _clearError();
 
-      if (!_isRecording) {
-        _setError('현재 녹음 중이 아닙니다.');
+      if (!_isListening) {
+        _setError('현재 음성 인식이 진행되지 않고 있습니다.');
         return null;
       }
 
-      // Stop recording
-      final path = await _audioRecord.stop();
+      debugPrint('🛑 음성 인식 중지');
+      final result = await _sttService.stopListening();
 
-      _isRecording = false;
-
-      if (path != null && await File(path).exists()) {
-        _currentRecordingPath = path;
-        _hasRecording = true;
-        debugPrint('✅ 녹음 완료: $path');
+      if (result.isSuccess && result.transcript != null) {
+        _currentTranscript = result.transcript!;
+        debugPrint('✅ 음성 인식 완료: $_currentTranscript');
+        return result.transcript;
       } else {
-        _setError('녹음 파일을 저장할 수 없습니다.');
-        _hasRecording = false;
-        debugPrint('❌ 녹음 파일 저장 실패');
+        _setError(result.message ?? '음성 인식에 실패했습니다.');
+        debugPrint('❌ 음성 인식 실패');
+        return null;
       }
-
-      notifyListeners();
-      return path;
     } catch (e) {
-      _setError('녹음을 중지하는데 실패했습니다: $e');
-      _isRecording = false;
-      _hasRecording = false;
-      notifyListeners();
-      debugPrint('❌ 녹음 중지 오류: $e');
+      _setError('음성 인식 중지 실패: $e');
+      debugPrint('❌ 음성 인식 중지 오류: $e');
       return null;
     }
   }
-
-  Future<bool> uploadAudioFile(String filePath) async {
-    _setUploading(true);
-    _clearError();
-
+  
+  /// Add current transcript to accumulated text
+  void addToAccumulated() {
+    if (_currentTranscript.isNotEmpty) {
+      if (_accumulatedTranscript.isNotEmpty) {
+        _accumulatedTranscript += ' $_currentTranscript';
+      } else {
+        _accumulatedTranscript = _currentTranscript;
+      }
+      
+      // Clear current transcript for next session
+      _currentTranscript = '';
+      debugPrint('📝 텍스트 추가됨. 누적 길이: ${_accumulatedTranscript.length}');
+      debugPrint('📝 누적 내용: ${_accumulatedTranscript.length > 100 ? _accumulatedTranscript.substring(0, 100) + "..." : _accumulatedTranscript}');
+      notifyListeners();
+    }
+  }
+  
+  /// Clear accumulated transcript
+  void clearAccumulated() {
+    _accumulatedTranscript = '';
+    _currentTranscript = '';
+    debugPrint('🗑️ 누적된 텍스트 초기화');
+    notifyListeners();
+  }
+  
+  /// Get final transcript for processing (accumulated + current)
+  String getFinalTranscript() {
+    if (_currentTranscript.isNotEmpty) {
+      if (_accumulatedTranscript.isNotEmpty) {
+        return '$_accumulatedTranscript $_currentTranscript';
+      } else {
+        return _currentTranscript;
+      }
+    }
+    return _accumulatedTranscript;
+  }
+  
+  /// Set transcript from OCR result for recipe processing
+  void setTranscriptFromOCR(String ocrText) {
+    _accumulatedTranscript = ocrText;
+    _currentTranscript = '';
+    debugPrint('📷 OCR 텍스트 설정됨. 길이: ${ocrText.length}자');
+    debugPrint('📝 OCR 내용: ${ocrText.length > 200 ? ocrText.substring(0, 200) + "..." : ocrText}');
+    notifyListeners();
+  }
+  
+  /// Cancel ongoing speech recognition
+  Future<void> cancelListening() async {
     try {
-      // TODO: Implement audio upload
-      // final result = await _audioService.uploadAudio(filePath);
-      // if (result.isSuccess) {
-      //   final audioFile = result.audioFile;
-      //   _audioFiles.insert(0, audioFile);
-      //   notifyListeners();
-      //   return true;
-      // } else {
-      //   _setError(result.message);
-      //   return false;
-      // }
-
-      // Mock successful upload
-      await Future.delayed(const Duration(seconds: 2));
-      return true;
+      if (_isListening) {
+        debugPrint('❌ 음성 인식 취소');
+        await _sttService.cancelListening();
+        _currentTranscript = '';
+        notifyListeners();
+      }
     } catch (e) {
-      _setError('파일 업로드에 실패했습니다.');
-      return false;
-    } finally {
-      _setUploading(false);
+      debugPrint('❌ 음성 인식 취소 오류: $e');
     }
   }
 
-  Future<bool> processAudio(String audioId) async {
-    _clearError();
+  /// Process recognized transcript and create recipe
+  Future<bool> processTranscriptAndCreateRecipe() async {
+    final finalTranscript = getFinalTranscript();
+    
+    if (finalTranscript.isEmpty) {
+      _setError('처리할 음성 인식 결과가 없습니다.');
+      return false;
+    }
 
     try {
-      // Find the audio file
-      final audioIndex = _audioFiles.indexWhere((audio) => audio.id == audioId);
-      if (audioIndex == -1) {
-        _setError('오디오 파일을 찾을 수 없습니다.');
+      _setProcessing(true);
+      _clearError();
+
+      debugPrint('📤 텍스트 처리 및 레시피 생성 시작');
+      debugPrint('📝 최종 내용 길이: ${finalTranscript.length}자');
+      debugPrint('📝 최종 내용: ${finalTranscript.length > 200 ? finalTranscript.substring(0, 200) + "..." : finalTranscript}');
+      
+      // Send final transcript to server for recipe processing
+      final processResult = await _audioService.processTranscript(finalTranscript);
+
+      if (!processResult.isSuccess) {
+        _setError(processResult.message ?? '레시피 생성에 실패했습니다.');
         return false;
       }
 
-      // Update status to processing
-      _audioFiles[audioIndex] = _audioFiles[audioIndex].copyWith(
-        processingStatus: 'processing',
-      );
-      _currentProcessingAudio = _audioFiles[audioIndex];
-      notifyListeners();
+      debugPrint('🎉 레시피 생성 완료');
 
-      // TODO: Implement API call to process audio
-      // final result = await _audioService.processAudio(audioId);
-      // if (result.isSuccess) {
-      //   _audioFiles[audioIndex] = _audioFiles[audioIndex].copyWith(
-      //     processingStatus: 'completed',
-      //     transcriptText: result.transcriptText,
-      //   );
-      // } else {
-      //   _audioFiles[audioIndex] = _audioFiles[audioIndex].copyWith(
-      //     processingStatus: 'failed',
-      //   );
-      //   _setError(result.message);
-      //   return false;
-      // }
+      // Recipe created successfully on server
+      if (processResult.recipeId != null) {
+        debugPrint('✅ 레시피 ID: ${processResult.recipeId}');
+      }
 
-      // Mock processing
-      await Future.delayed(const Duration(seconds: 3));
-      _audioFiles[audioIndex] = _audioFiles[audioIndex].copyWith(
-        processingStatus: 'completed',
-        transcriptText: '엄마가 알려주신 김치찌개 레시피입니다...',
-      );
+      // Clear all transcripts after successful processing
+      clearAccumulated();
 
-      _currentProcessingAudio = null;
-      notifyListeners();
       return true;
     } catch (e) {
-      _setError('음성 처리에 실패했습니다.');
-      _currentProcessingAudio = null;
-      notifyListeners();
+      _setError('처리 중 오류가 발생했습니다: $e');
+      debugPrint('❌ 텍스트 처리 오류: $e');
       return false;
+    } finally {
+      _setProcessing(false);
     }
   }
 
-  void deleteAudioFile(String audioId) {
-    _audioFiles.removeWhere((audio) => audio.id == audioId);
-    notifyListeners();
-  }
-
-  AudioFile? getAudioById(String audioId) {
-    try {
-      return _audioFiles.firstWhere((audio) => audio.id == audioId);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
-  }
-
-  void _setUploading(bool uploading) {
-    _isUploading = uploading;
+  void _setProcessing(bool processing) {
+    _isProcessing = processing;
     notifyListeners();
   }
 
@@ -269,247 +264,13 @@ class AudioProvider extends ChangeNotifier {
     _clearError();
   }
 
-  // Upload and process current recording
-  Future<bool> uploadAndProcessRecording() async {
-    if (!_hasRecording || _currentRecordingPath == null) {
-      _setError('업로드할 녹음 파일이 없습니다.');
-      return false;
-    }
-
-    try {
-      _setUploading(true);
-      _clearError();
-
-      // Upload audio file
-      debugPrint('📤 오디오 파일 업로드 시작: $_currentRecordingPath');
-      final uploadResult =
-          await _audioService.uploadAudio(_currentRecordingPath!);
-
-      if (!uploadResult.isSuccess) {
-        _setError(uploadResult.message ?? '파일 업로드에 실패했습니다.');
-        return false;
-      }
-
-      debugPrint('✅ 오디오 파일 업로드 완료');
-
-      // Process audio for recipe extraction
-      debugPrint('🔄 음성 처리 및 레시피 생성 시작');
-      final processResult =
-          await _audioService.processAudio(uploadResult.audioId!);
-
-      if (!processResult.isSuccess) {
-        _setError(processResult.message ?? '음성 처리에 실패했습니다.');
-        return false;
-      }
-
-      debugPrint('🎉 레시피 생성 완료');
-
-      // Create recipe from processed audio
-      if (_recipeProvider != null && processResult.recipeId != null) {
-        await _recipeProvider!.createRecipeFromAudio(uploadResult.audioId!);
-      }
-
-      // Clear current recording
-      _hasRecording = false;
-      _currentRecordingPath = null;
-
-      // Reload audio files
-      await loadAudioFiles();
-
-      return true;
-    } catch (e) {
-      _setError('처리 중 오류가 발생했습니다: $e');
-      debugPrint('❌ 업로드/처리 오류: $e');
-      return false;
-    } finally {
-      _setUploading(false);
-    }
-  }
-
-  // Check microphone permission
-  Future<bool> _checkMicrophonePermission() async {
-    try {
-      PermissionStatus permission = await Permission.microphone.status;
-      debugPrint('🔍 초기 마이크 권한 상태: $permission');
-      
-      // iOS 시뮬레이터에서는 granted가 아닌 경우 무조건 요청
-      if (!permission.isGranted) {
-        debugPrint('🔍 마이크 권한 요청 시작');
-        permission = await Permission.microphone.request();
-        debugPrint('🔍 마이크 권한 요청 후 상태: $permission');
-      }
-
-      // iOS 시뮬레이터에서 permanentlyDenied가 잘못 나오는 경우를 위한 추가 체크
-      if (permission.isPermanentlyDenied) {
-        debugPrint('🔍 권한이 영구적으로 거부됨 - AudioRecorder로도 확인');
-        
-        // AudioRecorder의 hasPermission으로도 체크
-        try {
-          final audioPermission = await _audioRecord.hasPermission();
-          debugPrint('🔍 AudioRecorder 권한 상태: $audioPermission');
-          
-          if (audioPermission) {
-            debugPrint('🔍 AudioRecorder에서는 권한이 허용됨 - 진행');
-            return true;
-          }
-        } catch (audioError) {
-          debugPrint('🔍 AudioRecorder 권한 체크 오류: $audioError');
-        }
-        
-        // 시뮬레이터에서는 실제로 권한이 있을 수 있으므로 한 번 더 체크
-        final retryPermission = await Permission.microphone.status;
-        debugPrint('🔍 재확인 권한 상태: $retryPermission');
-        
-        if (retryPermission.isGranted) {
-          debugPrint('🔍 재확인 결과 권한이 허용됨');
-          return true;
-        }
-        
-        // 여전히 거부되어 있다면 설정으로 이동
-        debugPrint('🔍 설정 앱으로 이동');
-        await openAppSettings();
-        return false;
-      }
-
-      debugPrint('🔍 최종 권한 결과: ${permission.isGranted}');
-      return permission.isGranted;
-    } catch (e) {
-      debugPrint('❌ 권한 확인 오류: $e');
-      return false;
-    }
-  }
-
-  /// 대용량 파일 업로드 (진행률 포함)
-  Future<bool> uploadLargeAudioFile(String filePath) async {
-    _setUploading(true);
-    _uploadProgress = 0.0;
-    _clearError();
-
-    try {
-      final file = File(filePath);
-      if (!await file.exists()) {
-        _setError('파일을 찾을 수 없습니다.');
-        return false;
-      }
-
-      final fileSize = await file.length();
-      
-      // 파일 크기 검사 및 검증
-      try {
-        final validatedFile = await AudioCompressionService.validateAudioFile(file);
-        return await _uploadWithProgress(validatedFile.path);
-      } catch (e) {
-        _setError('파일 검증에 실패했습니다: $e');
-        return false;
-      }
-    } catch (e) {
-      _setError('파일 업로드에 실패했습니다: $e');
-      return false;
-    } finally {
-      _setUploading(false);
-      _uploadProgress = 0.0;
-    }
-  }
-
-  /// 진행률을 포함한 업로드
-  Future<bool> _uploadWithProgress(String filePath) async {
-    try {
-      // 청크 단위 업로드 시뮬레이션
-      final file = File(filePath);
-      final fileSize = await file.length();
-      final chunks = await AudioCompressionService.splitIntoChunks(file);
-      
-      int uploadedSize = 0;
-      
-      for (int i = 0; i < chunks.length; i++) {
-        await Future.delayed(const Duration(milliseconds: 100)); // 시뮬레이션
-        
-        uploadedSize += chunks[i].length;
-        _uploadProgress = uploadedSize / fileSize;
-        notifyListeners();
-        
-        // 업로드 취소 체크 (필요시)
-        if (!_isUploading) {
-          throw Exception('업로드가 취소되었습니다.');
-        }
-      }
-
-      // 실제 서버 업로드 (청크 업로드 API 사용)
-      final uploadResult = await _audioService.uploadAudioChunked(filePath);
-      
-      if (!uploadResult.isSuccess) {
-        _setError(uploadResult.message ?? '서버 업로드에 실패했습니다.');
-        return false;
-      }
-
-      // 업로드된 파일을 목록에 추가
-      if (uploadResult.audioFile != null) {
-        _audioFiles.insert(0, uploadResult.audioFile!);
-        notifyListeners();
-      }
-
-      return true;
-    } catch (e) {
-      _setError('업로드 처리 중 오류: $e');
-      return false;
-    }
-  }
-
-  /// 실시간 녹음 용량 모니터링
-  void startRecordingMonitoring() {
-    if (_currentRecordingPath == null) return;
-    
-    // 1초마다 파일 크기 체크
-    Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!_isRecording) {
-        timer.cancel();
-        return;
-      }
-      
-      _updateRecordingStats();
-    });
-  }
-
-  /// 녹음 통계 업데이트
-  Future<void> _updateRecordingStats() async {
-    if (_currentRecordingPath == null) return;
-    
-    try {
-      _recordingDurationSeconds++;
-      _estimatedFileSize = AudioCompressionService.estimateFileSize(
-        durationSeconds: _recordingDurationSeconds,
-      );
-      
-      // 최대 용량 초과 체크
-      if (await AudioCompressionService.shouldStopRecording(_currentRecordingPath!)) {
-        await stopRecording();
-        _setError('최대 녹음 시간(30분) 또는 용량(50MB)에 도달했습니다.');
-      }
-      
-      notifyListeners();
-    } catch (e) {
-      print('녹음 통계 업데이트 실패: $e');
-    }
-  }
-
-  /// 업로드 취소
-  void cancelUpload() {
-    _setUploading(false);
-    _uploadProgress = 0.0;
-    notifyListeners();
-  }
-
-  /// 녹음 통계 초기화
-  void _resetRecordingStats() {
-    _recordingDurationSeconds = 0;
-    _estimatedFileSize = 0;
-    notifyListeners();
-  }
-
-  // Dispose resources
+  /// Dispose resources
   @override
   void dispose() {
-    _audioRecord.dispose();
+    _transcriptSubscription?.cancel();
+    _listeningSubscription?.cancel();
+    _errorSubscription?.cancel();
+    _sttService.dispose();
     super.dispose();
   }
 }

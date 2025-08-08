@@ -4,7 +4,6 @@ from sqlalchemy import select, or_, and_, cast, String
 from typing import List, Optional
 from app.database import get_db
 from app.models.user import User
-from app.models.audio import AudioFile
 from app.models.recipe import Recipe
 from app.schemas.recipe import RecipeCreate, RecipeResponse, RecipeUpdate
 from app.utils.dependencies import get_current_active_user
@@ -14,57 +13,26 @@ router = APIRouter()
 
 
 @router.post("/", response_model=RecipeResponse)
-async def create_recipe_from_audio(
+async def create_recipe(
     recipe_data: RecipeCreate,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """오디오 파일로부터 레시피 생성"""
-    
-    # 오디오 파일 조회
-    result = await db.execute(
-        select(AudioFile).where(
-            AudioFile.id == recipe_data.source_audio_id,
-            AudioFile.user_id == current_user.id
-        )
-    )
-    audio_file = result.scalar_one_or_none()
-    
-    if not audio_file:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Audio file not found"
-        )
-    
-    if not audio_file.transcript_text:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Audio file has not been transcribed yet"
-        )
+    """레시피 생성"""
     
     try:
-        # GPT로 레시피 정리
-        organized_recipe = await organize_recipe_from_text(audio_file.transcript_text)
-        
-        if not organized_recipe:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to organize recipe"
-            )
-        
         # 레시피 생성
         recipe = Recipe(
             user_id=current_user.id,
-            source_audio_id=audio_file.id,
-            title=organized_recipe.get("title", "정리된 레시피"),
-            description=organized_recipe.get("description"),
-            ingredients=organized_recipe.get("ingredients"),
-            steps=organized_recipe.get("steps"),
-            tips=organized_recipe.get("tips"),
-            servings=organized_recipe.get("servings"),
-            cooking_time=organized_recipe.get("cooking_time"),
-            difficulty=organized_recipe.get("difficulty"),
-            category=organized_recipe.get("category")
+            title=recipe_data.title or "새 레시피",
+            description=recipe_data.description,
+            ingredients=recipe_data.ingredients,
+            steps=recipe_data.steps,
+            tips=recipe_data.tips,
+            servings=recipe_data.servings,
+            cooking_time=recipe_data.cooking_time,
+            difficulty=recipe_data.difficulty,
+            category=recipe_data.category
         )
         
         db.add(recipe)
@@ -74,7 +42,6 @@ async def create_recipe_from_audio(
         return RecipeResponse(
             id=str(recipe.id),
             user_id=str(recipe.user_id),
-            source_audio_id=str(recipe.source_audio_id) if recipe.source_audio_id else None,
             title=recipe.title,
             description=recipe.description,
             ingredients=recipe.ingredients,
@@ -114,7 +81,6 @@ async def get_user_recipes(
         RecipeResponse(
             id=str(recipe.id),
             user_id=str(recipe.user_id),
-            source_audio_id=str(recipe.source_audio_id) if recipe.source_audio_id else None,
             title=recipe.title,
             description=recipe.description,
             ingredients=recipe.ingredients,
@@ -157,8 +123,7 @@ async def get_recipe(
     return RecipeResponse(
         id=str(recipe.id),
         user_id=str(recipe.user_id),
-        source_audio_id=str(recipe.source_audio_id) if recipe.source_audio_id else None,
-        title=recipe.title,
+                title=recipe.title,
         description=recipe.description,
         ingredients=recipe.ingredients,
         steps=recipe.steps,
@@ -206,8 +171,7 @@ async def update_recipe(
     return RecipeResponse(
         id=str(recipe.id),
         user_id=str(recipe.user_id),
-        source_audio_id=str(recipe.source_audio_id) if recipe.source_audio_id else None,
-        title=recipe.title,
+                title=recipe.title,
         description=recipe.description,
         ingredients=recipe.ingredients,
         steps=recipe.steps,

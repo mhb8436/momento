@@ -4,8 +4,6 @@ import '../../config/theme.dart';
 import '../../config/app_config.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/recipe_provider.dart';
-import '../../providers/audio_provider.dart';
-import '../../widgets/common/custom_icon_button.dart';
 import '../settings/app_info_screen.dart';
 import '../settings/privacy_settings_screen.dart';
 import '../settings/help_screen.dart';
@@ -166,40 +164,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStatsCards() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            title: '레시피',
-            provider: Consumer<RecipeProvider>(
-              builder: (context, recipeProvider, _) {
-                return _buildStatContent(
-                  count: recipeProvider.recipes.length,
-                  icon: Icons.restaurant_menu,
-                  color: AppTheme.primaryColor,
-                );
-              },
-            ),
-            onTap: () => _switchToTab(1), // Recipe tab
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            title: '오디오',
-            provider: Consumer<AudioProvider>(
-              builder: (context, audioProvider, _) {
-                return _buildStatContent(
-                  count: audioProvider.audioFiles.length,
-                  icon: Icons.mic,
-                  color: AppTheme.secondaryColor,
-                );
-              },
-            ),
-            onTap: () => _switchToTab(2), // Audio tab
-          ),
-        ),
-      ],
+    return _buildStatCard(
+      title: '레시피',
+      provider: Consumer<RecipeProvider>(
+        builder: (context, recipeProvider, _) {
+          return _buildStatContent(
+            count: recipeProvider.recipes.length,
+            icon: Icons.restaurant_menu,
+            color: AppTheme.primaryColor,
+          );
+        },
+      ),
+      onTap: () => _switchToTab(1), // Recipe tab
     );
   }
 

@@ -27,13 +27,6 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   
-  # Audio Recording & Playback
-  record: ^5.1.2
-  audioplayers: ^5.2.1
-  permission_handler: ^11.2.0
-  
-  # File Handling  
-  path_provider: ^2.1.2
   image_picker: ^1.0.4
   image_cropper: ^5.0.1
   
@@ -53,8 +46,18 @@ dependencies:
   firebase_messaging: ^14.7.10
   flutter_local_notifications: ^16.3.2
   
-  # Audio processing (서버에서 처리하므로 제거)
-  # ffmpeg_kit_flutter: ^6.0.3
+  # Speech-to-Text
+  speech_to_text: ^7.2.0
+  
+  # OCR
+  google_mlkit_text_recognition: ^0.10.0
+  
+  # HTML parsing for URL extraction
+  html: ^0.15.4
+  
+  # YouTube API
+  googleapis: ^13.1.0
+  googleapis_auth: ^1.4.1
 
 dev_dependencies:
   flutter_test:
@@ -79,7 +82,6 @@ flutter:
   
   assets:
     - assets/images/
-    - assets/audio/
   
   # fonts:
   #   - family: NotoSansKR

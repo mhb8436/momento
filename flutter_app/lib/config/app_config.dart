@@ -1,5 +1,3 @@
-import 'dart:io';
-
 class AppConfig {
   static const String appName = 'MOMENTO';
   static const String appVersion = '1.0.0';
@@ -7,7 +5,7 @@ class AppConfig {
   // API Configuration
   static String get baseUrl {
     // ngrok 터널 URL (고정, 네트워크 무관)
-    return 'https://9ea50d6e6f44.ngrok-free.app';
+    return 'https://687000934841.ngrok-free.app';
 
     // 이전 IP들 (참고용)
     // 핫스팟: 'http://192.0.0.3:8000'

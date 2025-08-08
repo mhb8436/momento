@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-import 'config/app_config.dart';
 import 'config/theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/audio_provider.dart';
@@ -60,14 +59,7 @@ class MomentoApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => RecipeProvider()),
         ChangeNotifierProvider(create: (_) => InquiryProvider()),
-        ChangeNotifierProxyProvider<RecipeProvider, AudioProvider>(
-          create: (_) => AudioProvider(),
-          update: (_, recipeProvider, audioProvider) {
-            audioProvider ??= AudioProvider();
-            audioProvider.setRecipeProvider(recipeProvider);
-            return audioProvider;
-          },
-        ),
+        ChangeNotifierProvider(create: (_) => AudioProvider()),
       ],
       child: GestureDetector(
         onTap: () {

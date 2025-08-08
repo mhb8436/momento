@@ -4,7 +4,15 @@ from datetime import datetime
 
 
 class RecipeCreate(BaseModel):
-    source_audio_id: str
+    title: Optional[str] = None
+    description: Optional[str] = None
+    ingredients: Optional[List[Dict[str, Any]]] = None
+    steps: Optional[List[Dict[str, Any]]] = None
+    tips: Optional[str] = None
+    servings: Optional[str] = None
+    cooking_time: Optional[str] = None
+    difficulty: Optional[str] = None
+    category: Optional[str] = None
 
 
 class RecipeIngredient(BaseModel):
@@ -24,7 +32,6 @@ class RecipeStep(BaseModel):
 class RecipeResponse(BaseModel):
     id: str
     user_id: str
-    source_audio_id: Optional[str] = None
     title: str
     description: Optional[str] = None
     ingredients: Optional[List[Dict[str, Any]]] = None

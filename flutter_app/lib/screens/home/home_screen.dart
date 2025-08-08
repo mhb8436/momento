@@ -5,9 +5,10 @@ import '../../providers/auth_provider.dart';
 import '../../providers/recipe_provider.dart';
 import '../../widgets/common/custom_icon_button.dart';
 import '../recording/recording_screen.dart';
+import '../ocr/ocr_screen.dart';
 import '../recipe/recipe_list_screen.dart';
+import '../recipe/recipe_create_screen.dart';
 import '../recipe/recipe_detail_screen.dart';
-import '../audio/audio_list_screen.dart';
 import '../profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -63,8 +64,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
-      floatingActionButton: _buildFloatingActionButton(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
@@ -155,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       case 1:
         return _buildRecipesTab();
       case 2:
-        return _buildAudioTab();
+        return _buildCreateTab();
       case 3:
         return _buildProfileTab();
       default:
@@ -174,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           _buildRecentRecipes(),
           const SizedBox(height: 32),
           _buildStats(),
-          const SizedBox(height: 100), // Space for FAB
+          const SizedBox(height: 32), // Bottom spacing
         ],
       ),
     );
@@ -205,39 +204,63 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
+          Column(
             children: [
-              Expanded(
-                child: _buildQuickActionCard(
-                  icon: Icons.mic,
-                  title: '음성 녹음',
-                  subtitle: '새로운 레시피 기록',
-                  gradient: AppTheme.primaryGradient,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RecordingScreen(),
-                      ),
-                    );
-                  },
-                ),
+              // First row: 음성 녹음 카드 (전체 너비)
+              _buildQuickActionCard(
+                icon: Icons.mic,
+                title: '음성 녹음',
+                subtitle: '새로운 레시피를 음성으로 기록하세요',
+                gradient: AppTheme.primaryGradient,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RecordingScreen(),
+                    ),
+                  );
+                },
+                isFullWidth: true,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildQuickActionCard(
-                  icon: Icons.library_books,
-                  title: '내 레시피',
-                  subtitle: '저장된 레시피 보기',
-                  gradient: const LinearGradient(
-                    colors: [AppTheme.secondaryColor, Color(0xFF26D0CE)],
+              const SizedBox(height: 12),
+              // Second row: OCR 스캔과 내 레시피 (반반씩)
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildQuickActionCard(
+                      icon: Icons.document_scanner,
+                      title: 'OCR 스캔',
+                      subtitle: '이미지에서 레시피 추출',
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6C63FF), Color(0xFF9C88FF)],
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const OCRScreen(),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                  onTap: () {
-                    setState(() {
-                      _currentIndex = 1;
-                    });
-                  },
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildQuickActionCard(
+                      icon: Icons.library_books,
+                      title: '내 레시피',
+                      subtitle: '저장된 레시피 보기',
+                      gradient: const LinearGradient(
+                        colors: [AppTheme.secondaryColor, Color(0xFF26D0CE)],
+                      ),
+                      onTap: () {
+                        setState(() {
+                          _currentIndex = 1;
+                        });
+                      },
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -252,40 +275,79 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     required String subtitle,
     required Gradient gradient,
     required VoidCallback onTap,
+    bool isFullWidth = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: gradient,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 32,
+        child: isFullWidth 
+          ? Row(
+              children: [
+                Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 40,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.white.withOpacity(0.7),
+                  size: 20,
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withOpacity(0.9),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -551,8 +613,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return const RecipeListScreen();
   }
 
-  Widget _buildAudioTab() {
-    return const AudioListScreen();
+  Widget _buildCreateTab() {
+    return const RecipeCreateScreen();
   }
 
   Widget _buildProfileTab() {
@@ -611,9 +673,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             label: '레시피',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.headphones_outlined),
-            activeIcon: Icon(Icons.headphones),
-            label: '오디오',
+            icon: Icon(Icons.add_circle_outline),
+            activeIcon: Icon(Icons.add_circle),
+            label: '작성',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outlined),
@@ -625,40 +687,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildFloatingActionButton() {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const RecordingScreen(),
-            ),
-          );
-        },
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: const Icon(
-          Icons.mic,
-          color: Colors.white,
-          size: 28,
-        ),
-      ),
-    );
-  }
 
   void _showSettingsMenu() {
     showModalBottomSheet(

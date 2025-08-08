@@ -9,6 +9,9 @@ MOMENTO is an emotional cooking archiving app that records family cooking recipe
 **Key Features:**
 - Voice recording of cooking instructions
 - STT (Speech-to-Text) conversion using OpenAI Whisper
+- OCR (Optical Character Recognition) for image text extraction
+- URL extraction from YouTube videos and blog posts (server-side security)
+- Text input for manual recipe entry
 - Recipe organization and summarization using GPT
 - Family sharing with personalized recommendations
 - Senior-friendly interface with automatic suggestions
@@ -26,6 +29,8 @@ MOMENTO is an emotional cooking archiving app that records family cooking recipe
 - REST API server with JWT authentication
 - OpenAI Whisper API integration for STT
 - GPT-3.5-turbo integration for recipe summarization
+- YouTube Data API v3 integration (server-side security)
+- Web scraping with BeautifulSoup for blog content
 - Audio file storage and processing
 - SQLAlchemy 2.0 with async support
 

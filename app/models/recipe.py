@@ -11,7 +11,6 @@ class Recipe(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    source_audio_id = Column(UUID(as_uuid=True), ForeignKey("audio_files.id"), nullable=True)
     
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
@@ -29,4 +28,3 @@ class Recipe(Base):
 
     # Relationships
     user = relationship("User", back_populates="recipes")
-    source_audio = relationship("AudioFile", back_populates="recipes")

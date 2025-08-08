@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/storage/local_storage_service.dart';
 import '../services/api/api_service.dart';
-import '../config/app_config.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();

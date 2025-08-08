@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, audio, recipes, uploads, inquiry, notifications
+from app.routers import auth, audio, recipes, uploads, inquiry, notifications, url_extract
 
 app = FastAPI(
     title="MOMENTO API",
@@ -22,6 +22,7 @@ app.include_router(recipes.router, prefix="/recipes", tags=["recipes"])
 app.include_router(uploads.router)
 app.include_router(inquiry.router, prefix="/inquiries", tags=["inquiries"])
 app.include_router(notifications.router)
+app.include_router(url_extract.router)
 
 
 @app.get("/")
