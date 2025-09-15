@@ -1,0 +1,254 @@
+{
+  "@@locale": "es",
+  
+  "appTitle": "MOMENTO",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  
+  "appSubtitle": "Registra las recetas de mamá con voz e IA",
+  "@appSubtitle": {
+    "description": "App subtitle for onboarding"
+  },
+
+  "login": "Iniciar Sesión",
+  "signup": "Registrarse",
+  "email": "Correo Electrónico",
+  "password": "Contraseña",
+  "confirmPassword": "Confirmar Contraseña",
+  "forgotPassword": "¿Olvidaste tu contraseña?",
+  "loginButton": "Iniciar Sesión",
+  "signupButton": "Crear Cuenta",
+  "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+  "dontHaveAccount": "¿No tienes una cuenta?",
+  
+  "enterEmail": "Por favor introduce tu correo electrónico",
+  "enterPassword": "Por favor introduce tu contraseña",
+  "invalidEmail": "Por favor introduce un correo electrónico válido",
+  "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
+  "passwordsNotMatch": "Las contraseñas no coinciden",
+  
+  "home": "Inicio",
+  "recipes": "Recetas",
+  "profile": "Perfil",
+  "settings": "Configuración",
+  
+  "createRecipe": "Crear Receta",
+  "recordVoice": "Grabar con Voz",
+  "recordVoiceSubtitle": "Cuéntanos sobre tu proceso de cocina\\ny la IA lo organizará en una receta estructurada",
+  "scanImage": "Escanear Imagen",
+  "scanImageSubtitle": "Extraer texto\\nde una foto",
+  "textInput": "Entrada de Texto",
+  "textInputSubtitle": "Introducir notas/mensajes\\ndirectamente",
+  "urlInput": "Entrada de URL",
+  "urlInputSubtitle": "Extraer desde YouTube\\n/enlaces de blogs",
+  
+  "startRecording": "Iniciar Grabación",
+  "stopRecording": "Detener Grabación",
+  "processing": "Procesando...",
+  "cancel": "Cancelar",
+  "save": "Guardar",
+  "delete": "Eliminar",
+  "edit": "Editar",
+  "share": "Compartir",
+  
+  "voiceRecognition": "Reconocimiento de Voz",
+  "listening": "Escuchando tu voz...",
+  "waitingForVoice": "Esperando entrada de voz",
+  "tapToStartRecording": "Toca el botón del micrófono para comenzar",
+  "speakCookingInstructions": "Por favor habla claramente tus instrucciones de cocina",
+  "includeIngredientsAndSteps": "Incluye ingredientes, pasos de cocción y consejos",
+  
+  "credits": "Créditos",
+  "creditsRequired": "Créditos Requeridos",
+  "creditsRequiredMessage": "{action} requiere 1 crédito.",
+  "@creditsRequiredMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "currentCredits": "Créditos Actuales",
+  "insufficientCredits": "Créditos Insuficientes",
+  "creditShortage": "No tienes suficientes créditos. Por favor compra créditos o espera por los créditos gratuitos diarios.",
+  "freeCreditsRemaining": "{count} créditos gratuitos restantes (hoy)",
+  "@freeCreditsRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "creditStore": "Tienda de Créditos",
+  "purchaseCredits": "Comprar Créditos",
+  "creditPackages": "Paquetes de Créditos",
+  "autoRechargeSubscriptions": "Suscripciones de Recarga Automática",
+  
+  "starterPackage": "Paquete Inicial",
+  "familyPackage": "Paquete Familiar", 
+  "premiumPackage": "Paquete Premium",
+  "monthlyAutoRecharge": "Recarga Automática Mensual",
+  "yearlyAutoRecharge": "Recarga Automática Anual",
+  
+  "creditsAmount": "{count} créditos",
+  "@creditsAmount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "price": "{amount}",
+  "@price": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "creditStoreInfo": "Guía de la Tienda de Créditos",
+  "creditStoreDescription": "Usa créditos para acceder al servicio de generación de recetas con IA.\\n\\n📝 Tarifas de Uso:\\n• Generación de recetas: {recipeGenCost} crédito\\n• Mejora de recetas: {recipeImproveCost} crédito\\n\\n🎁 Beneficios Gratuitos:\\n• Nuevo registro: {initialCredits} créditos\\n• Diarios {dailyCredits} créditos gratuitos\\n\\n⭐ Servicio de Recarga Automática:\\n• Recarga automática mensual de 50 créditos: €8.99 (mes)\\n• Recarga automática anual de 100 créditos: €89.99 (año)\\n• Uso conveniente de recarga automática",
+  "@creditStoreDescription": {
+    "placeholders": {
+      "recipeGenCost": {"type": "int"},
+      "recipeImproveCost": {"type": "int"},
+      "initialCredits": {"type": "int"},
+      "dailyCredits": {"type": "int"}
+    }
+  },
+  
+  "autoRechargeEnabled": "Recarga automática habilitada",
+  "useCredit": "Usar Crédito",
+  "useFreeCredit": "Usar crédito gratuito ({count} restantes hoy)",
+  "@useFreeCredit": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "usePaidCredit": "Usar crédito pagado",
+  "balanceAfterUse": "Saldo después del uso: {balance} créditos",
+  "@balanceAfterUse": {
+    "placeholders": {
+      "balance": {"type": "int"}
+    }
+  },
+  
+  "recipeCreated": "🎉 ¡Receta creada exitosamente!",
+  "processingTranscript": "Analizando voz y generando receta...",
+  "processingCharacters": "Procesando {count} caracteres de contenido.",
+  "@processingCharacters": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  
+  "offlineMode": "Modo sin conexión",
+  "offlineRecipeCreation": "No se pueden crear nuevas recetas mientras está sin conexión.",
+  "offlineVoiceRecognition": "El reconocimiento de voz solo está disponible en línea.",
+  
+  "error": "Error",
+  "success": "Éxito",
+  "loading": "Cargando...",
+  "retry": "Reintentar",
+  "confirm": "Confirmar",
+  "close": "Cerrar",
+  
+  "recipeTitle": "Título de la Receta",
+  "ingredients": "Ingredientes",
+  "instructions": "Instrucciones",
+  "cookingTime": "Tiempo de Cocción",
+  "servings": "Porciones",
+  "difficulty": "Dificultad",
+  "tags": "Etiquetas",
+  "tips": "Consejos",
+  
+  "easy": "Fácil",
+  "medium": "Medio",
+  "hard": "Difícil",
+  
+  "minutes": "minutos",
+  "hours": "horas",
+  "servingsCount": "{count} porciones",
+  "@servingsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "greetingWithName": "¡Hola, {name}!",
+  "@greetingWithName": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "greetingDefault": "¡Hola!",
+  "todayQuestion": "¿Qué plato te gustaría registrar hoy?",
+  "offline": "Sin conexión",
+  
+  "quickStart": "Inicio Rápido",
+  "voiceRecording": "Grabación de Voz",
+  "newRecipeVoice": "Grabar una nueva receta con voz",
+  "ocrScan": "Escaneo OCR",
+  "extractFromImage": "Extraer receta de imagen",
+  "myRecipes": "Mis Recetas",
+  "viewSavedRecipes": "Ver recetas guardadas",
+  
+  "recentRecipes": "Recetas Recientes",
+  "viewAll": "Ver Todas",
+  "noRecipesYet": "Aún no hay recetas",
+  "recordFirstRecipe": "¡Graba tu primera receta de cocina!",
+  
+  "myCookingRecord": "Mi Registro de Cocina",
+  "totalRecipes": "Total de Recetas",
+  "recordingFiles": "Archivos de Grabación",
+  "favorites": "Favoritos",
+  
+  "community": "Comunidad",
+  "help": "Ayuda",
+  "logout": "Cerrar Sesión",
+  "logoutConfirm": "¿Estás seguro de que quieres cerrar sesión?",
+  "logoutDialog": "Cerrar Sesión",
+
+  "offlineRecognition": "Estás sin conexión. El reconocimiento de voz solo está disponible en línea.",
+  "recognizing": "Reconociendo",
+  "waiting": "Esperando",
+  "accumulatedContent": "Contenido acumulado ({count} caracteres)",
+  "@accumulatedContent": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "initialize": "Inicializar",
+  "currentlyRecognizing": "Reconociendo actualmente",
+  "waitingForVoice": "Esperando entrada de voz",
+  "listeningToVoice": "Escuchando voz...",
+  "startVoiceRecognition": "Presiona el botón de reconocimiento de voz para comenzar",
+  "speakRecipeDetails": "Por favor habla los detalles de tu receta",
+  "startVoiceRecognitionPrompt": "Iniciar reconocimiento de voz",
+  "includeIngredientsAndStepsLong": "Por favor incluye ingredientes, pasos de cocción, consejos, etc.",
+  "allowMicrophonePermission": "Por favor permite el permiso del micrófono y presiona el botón de reconocimiento",
+  "createRecipeButton": "Crear\nReceta",
+  "moreInstructionsVoice": "Presiona el botón de reconocimiento de voz para agregar más, o el botón crear receta para terminar",
+  "moreInstructionsVoiceAgain": "Presiona el botón de reconocimiento de voz nuevamente para agregar más",
+  "processingAndGenerating": "Analizando voz y generando receta...",
+  "processingCharactersCount": "Procesando {count} caracteres de contenido.",
+  "@processingCharactersCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "creatingAccount": "Creando cuenta...",
+  "createAccount": "Crear Cuenta",
+  "signupSubtitle": "Graba y comparte recetas preciosas con MOMENTO",
+  "nameOptional": "Nombre (Opcional)",
+  "enterName": "Por favor introduce tu nombre",
+  "nameTooShort": "El nombre debe tener al menos 2 caracteres",
+  "signupSuccess": "¡Cuenta creada exitosamente!",
+  "signupFailed": "Error al crear la cuenta.",
+  "termsAndPrivacy": "Al registrarte, aceptas nuestros Términos de Servicio y\nPolítica de Privacidad."
+}

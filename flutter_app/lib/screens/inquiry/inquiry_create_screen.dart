@@ -132,7 +132,7 @@ class _InquiryCreateScreenState extends State<InquiryCreateScreen> {
                 ],
               ),
               subtitle: Text(
-                _getCategoryDescription(category),
+                category.description,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppTheme.textSecondary,
                 ),
@@ -300,26 +300,6 @@ class _InquiryCreateScreenState extends State<InquiryCreateScreen> {
     );
   }
 
-  String _getCategoryDescription(InquiryCategory category) {
-    switch (category) {
-      case InquiryCategory.general:
-        return '일반적인 문의사항이나 의견';
-      case InquiryCategory.bug:
-        return '앱 오류나 버그 발견 시';
-      case InquiryCategory.feature:
-        return '새로운 기능에 대한 제안';
-      case InquiryCategory.account:
-        return '계정 관련 문의 (로그인, 비밀번호 등)';
-      case InquiryCategory.recipe:
-        return '레시피 생성 및 관리 관련';
-      case InquiryCategory.audio:
-        return '음성 녹음 및 처리 관련';
-      case InquiryCategory.ui:
-        return '화면 디자인이나 사용성 관련';
-      case InquiryCategory.performance:
-        return '속도나 성능 관련 문제';
-    }
-  }
 
   Future<void> _submitInquiry() async {
     if (!_formKey.currentState!.validate()) return;

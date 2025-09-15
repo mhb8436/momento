@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
 import '../../models/user.dart';
@@ -32,6 +33,60 @@ class LocalStorageService {
 
   static bool hasAccessToken() {
     return _instance.containsKey(AppConfig.accessTokenKey);
+  }
+  
+  static bool isTokenValid() {
+    final token = _instance.getString(AppConfig.accessTokenKey);
+    if (token == null) return false;
+    
+    try {
+      // JWT 토큰의 payload 부분 디코딩 (간단한 만료 체크)
+      final parts = token.split('.');
+      if (parts.length != 3) return false;
+      
+      // Base64 디코딩 (올바른 패딩 처리)
+      String payload = parts[1];
+      
+      // Base64 URL safe 문자를 일반 Base64로 변환
+      payload = payload.replaceAll('-', '+').replaceAll('_', '/');
+      
+      // 올바른 패딩 추가
+      switch (payload.length % 4) {
+        case 0:
+          break; // 패딩 불필요
+        case 2:
+          payload += '==';
+          break;
+        case 3:
+          payload += '=';
+          break;
+        default:
+          throw FormatException('Invalid base64 string');
+      }
+      
+      final decoded = utf8.decode(base64Decode(payload));
+      final payloadMap = json.decode(decoded) as Map<String, dynamic>;
+      
+      // 만료 시간 체크
+      final exp = payloadMap['exp'] as int?;
+      if (exp == null) return true; // exp가 없으면 만료되지 않는 토큰으로 간주
+      
+      final expiryDate = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      final now = DateTime.now();
+      
+      // 5분 여유를 두고 만료 체크
+      final isValid = expiryDate.isAfter(now.add(const Duration(minutes: 5)));
+      
+      if (!isValid) {
+        print('🕐 토큰 만료됨: 만료시간 ${expiryDate}, 현재시간 ${now}');
+      }
+      
+      return isValid;
+    } catch (e) {
+      print('🔍 토큰 검증 실패: $e');
+      // 검증 실패시 일단 true로 반환 (서버에서 최종 검증)
+      return true;
+    }
   }
 
   // User Data Management

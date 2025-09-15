@@ -13,7 +13,7 @@ import 'profile_edit_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Function(int)? onTabChange;
-  
+
   const ProfileScreen({super.key, this.onTabChange});
 
   @override
@@ -42,7 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
         final user = authProvider.user;
-        
+
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -92,16 +92,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text(
                 user?.fullName?.isNotEmpty == true ? user!.fullName! : '사용자',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary,
+                    ),
               ),
               const SizedBox(height: 4),
               Text(
                 user?.email ?? '',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
+                      color: AppTheme.textSecondary,
+                    ),
               ),
               const SizedBox(height: 16),
               Row(
@@ -153,9 +153,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.primaryColor,
-                fontWeight: FontWeight.w500,
-              ),
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
             ),
           ],
         ),
@@ -207,9 +207,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(
               title,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
+                    color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -234,9 +234,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Text(
           count.toString(),
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
         ),
       ],
     );
@@ -249,9 +249,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Text(
           '설정',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
-          ),
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
         ),
         const SizedBox(height: 16),
         Container(
@@ -281,20 +281,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 subtitle: '데이터 사용 및 개인정보 설정',
                 onTap: _openPrivacySettings,
               ),
-              _buildDivider(),
-              _buildMenuItem(
-                icon: Icons.language_outlined,
-                title: '언어',
-                subtitle: '한국어',
-                onTap: _openLanguageSettings,
-              ),
-              _buildDivider(),
-              _buildMenuItem(
-                icon: Icons.cloud_sync_outlined,
-                title: '데이터 동기화',
-                subtitle: '클라우드 백업 및 동기화 설정',
-                onTap: _openSyncSettings,
-              ),
+              // _buildDivider(),
+              // _buildMenuItem(
+              //   icon: Icons.language_outlined,
+              //   title: '언어',
+              //   subtitle: '한국어',
+              //   onTap: _openLanguageSettings,
+              // ),
+              // _buildDivider(),
+              // _buildMenuItem(
+              //   icon: Icons.cloud_sync_outlined,
+              //   title: '데이터 동기화',
+              //   subtitle: '클라우드 백업 및 동기화 설정',
+              //   onTap: _openSyncSettings,
+              // ),
             ],
           ),
         ),
@@ -302,9 +302,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Text(
           '지원',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
-          ),
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
         ),
         const SizedBox(height: 16),
         Container(
@@ -406,16 +406,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Text(
                     title,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: textColor ?? AppTheme.textPrimary,
-                    ),
+                          fontWeight: FontWeight.w600,
+                          color: textColor ?? AppTheme.textPrimary,
+                        ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
+                          color: AppTheme.textSecondary,
+                        ),
                   ),
                 ],
               ),
@@ -465,7 +465,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-
   void _openNotificationSettings() {
     Navigator.push(
       context,
@@ -484,25 +483,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _openLanguageSettings() {
-    // TODO: Navigate to language settings
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('언어 설정 기능 구현 예정'),
-        backgroundColor: AppTheme.primaryColor,
-      ),
-    );
-  }
 
-  void _openSyncSettings() {
-    // TODO: Navigate to sync settings
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('데이터 동기화 설정 기능 구현 예정'),
-        backgroundColor: AppTheme.primaryColor,
-      ),
-    );
-  }
 
   void _openInquiries() {
     Navigator.push(
@@ -547,7 +528,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Navigator.pop(context);
               context.read<AuthProvider>().logout();
             },
-            child: const Text('로그아웃', style: TextStyle(color: AppTheme.errorColor)),
+            child: const Text('로그아웃',
+                style: TextStyle(color: AppTheme.errorColor)),
           ),
         ],
       ),

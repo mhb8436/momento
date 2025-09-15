@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
+import 'loading_overlay.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
@@ -12,6 +13,7 @@ class CustomButton extends StatelessWidget {
   final bool isLoading;
   final IconData? icon;
   final bool outlined;
+  final LoadingStyle loadingStyle;
 
   const CustomButton({
     super.key,
@@ -25,6 +27,7 @@ class CustomButton extends StatelessWidget {
     this.isLoading = false,
     this.icon,
     this.outlined = false,
+    this.loadingStyle = LoadingStyle.minimal,
   });
 
   @override
@@ -64,13 +67,10 @@ class CustomButton extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (isLoading) ...[
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: textColor ?? (outlined ? AppTheme.primaryColor : Colors.white),
-                    ),
+                  InlineLoadingIndicator(
+                    color: textColor ?? (outlined ? AppTheme.primaryColor : Colors.white),
+                    size: 20,
+                    style: loadingStyle,
                   ),
                   const SizedBox(width: 12),
                 ],

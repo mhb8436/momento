@@ -119,6 +119,58 @@ class RecipeService {
     }
   }
 
+  Future<RecipeResult> updateRecipeWithObject(Recipe recipe) async {
+    try {
+      print('🔍 RecipeService updateRecipeWithObject 시작: ${recipe.id}');
+      print('🔍 API URL: ${AppConfig.baseUrl}${AppConfig.recipeEndpoint}/${recipe.id}');
+      
+      final Map<String, dynamic> updateData = {
+        'title': recipe.title,
+        'description': recipe.description,
+        'ingredients': recipe.ingredients?.map((ingredient) => {
+          'name': ingredient.name,
+          'amount': ingredient.amount,
+          'notes': ingredient.notes,
+        }).toList(),
+        'steps': recipe.steps?.map((step) => {
+          'step': step.step,
+          'instruction': step.instruction,
+          'time': step.time,
+          'temperature': step.temperature,
+          'tips': step.tips,
+        }).toList(),
+        'tips': recipe.tips,
+        'servings': recipe.servings,
+        'cooking_time': recipe.cookingTime,
+        'difficulty': recipe.difficulty,
+        'category': recipe.category,
+        'visibility': recipe.visibility.name,
+      };
+      
+      final response = await _apiService.put(
+        '${AppConfig.recipeEndpoint}/${recipe.id}',
+        data: updateData,
+      );
+
+      print('🔍 레시피 수정 API 응답: status=${response.statusCode}, data=${response.data}');
+
+      if (response.statusCode == 200) {
+        final updatedRecipe = Recipe.fromJson(response.data);
+        return RecipeResult.success(recipe: updatedRecipe);
+      } else {
+        final errorMsg = response.data['detail'] ?? '레시피 수정에 실패했습니다.';
+        print('❌ 레시피 수정 API 오류 응답: $errorMsg');
+        return RecipeResult.failure(message: errorMsg);
+      }
+    } on ApiException catch (e) {
+      print('❌ RecipeService updateRecipeWithObject ApiException: ${e.message} (status: ${e.statusCode})');
+      return RecipeResult.failure(message: e.message);
+    } catch (e) {
+      print('❌ RecipeService updateRecipeWithObject Exception: $e');
+      return RecipeResult.failure(message: '레시피 수정 중 오류가 발생했습니다: $e');
+    }
+  }
+
   Future<RecipeResult> updateRecipe({
     required String recipeId,
     String? title,

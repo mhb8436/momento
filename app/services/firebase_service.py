@@ -7,6 +7,7 @@ from firebase_admin.messaging import Message, Notification, AndroidConfig, APNSC
 import firebase_admin
 
 from app.models.notification import NotificationType
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ class FirebaseService:
                 logger.info("Firebase Admin SDK가 이미 초기화되어 있습니다.")
                 return
 
-            service_account_path = os.getenv('FIREBASE_SERVICE_ACCOUNT_PATH')
+            service_account_path = settings.firebase_service_account_path
             if not service_account_path or not os.path.exists(service_account_path):
                 logger.warning(f"Firebase 서비스 계정 파일을 찾을 수 없습니다: {service_account_path}")
                 return

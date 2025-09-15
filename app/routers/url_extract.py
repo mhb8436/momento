@@ -28,9 +28,9 @@ class UrlExtractionResponse(BaseModel):
     error: Optional[str] = None
 
 def extract_youtube_video_id(url: str) -> Optional[str]:
-    """YouTube URL에서 비디오 ID 추출"""
+    """YouTube URL에서 비디오 ID 추출 (Shorts 포함)"""
     patterns = [
-        r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\n?#]+)',
+        r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([^&\n?#]+)',
     ]
     
     for pattern in patterns:
@@ -121,8 +121,11 @@ async def extract_youtube_content(url: str) -> UrlExtractionResponse:
 async def extract_youtube_html(url: str) -> UrlExtractionResponse:
     """HTML 파싱을 통한 YouTube 콘텐츠 추출 (폴백)"""
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(str(url))
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            response = await client.get(str(url), headers=headers)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -185,8 +188,11 @@ def extract_recipe_from_description(description: str) -> str:
 async def extract_blog_content(url: str) -> UrlExtractionResponse:
     """블로그 콘텐츠 추출"""
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(str(url))
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            response = await client.get(str(url), headers=headers)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.text, 'html.parser')

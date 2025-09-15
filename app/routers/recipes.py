@@ -5,7 +5,7 @@ from typing import List, Optional
 from app.database import get_db
 from app.models.user import User
 from app.models.recipe import Recipe
-from app.schemas.recipe import RecipeCreate, RecipeResponse, RecipeUpdate
+from app.schemas.recipe import RecipeCreate, RecipeResponse, RecipeUpdate, RecipeVisibilityUpdate
 from app.utils.dependencies import get_current_active_user
 from app.services.gpt import organize_recipe_from_text, improve_recipe_description
 
@@ -52,6 +52,7 @@ async def create_recipe(
             difficulty=recipe.difficulty,
             category=recipe.category,
             image_url=recipe.image_url,
+            visibility=recipe.visibility,
             created_at=recipe.created_at,
             updated_at=recipe.updated_at
         )
@@ -91,6 +92,7 @@ async def get_user_recipes(
             difficulty=recipe.difficulty,
             category=recipe.category,
             image_url=recipe.image_url,
+            visibility=recipe.visibility,
             created_at=recipe.created_at,
             updated_at=recipe.updated_at
         )
@@ -123,7 +125,7 @@ async def get_recipe(
     return RecipeResponse(
         id=str(recipe.id),
         user_id=str(recipe.user_id),
-                title=recipe.title,
+        title=recipe.title,
         description=recipe.description,
         ingredients=recipe.ingredients,
         steps=recipe.steps,
@@ -132,6 +134,8 @@ async def get_recipe(
         cooking_time=recipe.cooking_time,
         difficulty=recipe.difficulty,
         category=recipe.category,
+        image_url=recipe.image_url,
+        visibility=recipe.visibility,
         created_at=recipe.created_at,
         updated_at=recipe.updated_at
     )
@@ -171,7 +175,7 @@ async def update_recipe(
     return RecipeResponse(
         id=str(recipe.id),
         user_id=str(recipe.user_id),
-                title=recipe.title,
+        title=recipe.title,
         description=recipe.description,
         ingredients=recipe.ingredients,
         steps=recipe.steps,
@@ -180,6 +184,8 @@ async def update_recipe(
         cooking_time=recipe.cooking_time,
         difficulty=recipe.difficulty,
         category=recipe.category,
+        image_url=recipe.image_url,
+        visibility=recipe.visibility,
         created_at=recipe.created_at,
         updated_at=recipe.updated_at
     )
@@ -260,5 +266,52 @@ async def improve_recipe_description_endpoint(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to improve description: {str(e)}"
         )
+
+
+@router.put("/{recipe_id}/visibility", response_model=RecipeResponse)
+async def update_recipe_visibility(
+    recipe_id: str,
+    visibility_update: RecipeVisibilityUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """레시피의 공개 범위를 변경합니다."""
+    
+    result = await db.execute(
+        select(Recipe).where(
+            Recipe.id == recipe_id,
+            Recipe.user_id == current_user.id
+        )
+    )
+    recipe = result.scalar_one_or_none()
+    
+    if not recipe:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recipe not found"
+        )
+    
+    # Update visibility
+    recipe.visibility = visibility_update.visibility
+    await db.commit()
+    await db.refresh(recipe)
+    
+    return RecipeResponse(
+        id=str(recipe.id),
+        user_id=str(recipe.user_id),
+        title=recipe.title,
+        description=recipe.description,
+        ingredients=recipe.ingredients,
+        steps=recipe.steps,
+        tips=recipe.tips,
+        servings=recipe.servings,
+        cooking_time=recipe.cooking_time,
+        difficulty=recipe.difficulty,
+        category=recipe.category,
+        image_url=recipe.image_url,
+        visibility=recipe.visibility,
+        created_at=recipe.created_at,
+        updated_at=recipe.updated_at
+    )
 
 

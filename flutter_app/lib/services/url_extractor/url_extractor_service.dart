@@ -58,10 +58,10 @@ class UrlExtractorService {
         url.contains('velog.io');
   }
 
-  /// Get YouTube video ID from URL
+  /// Get YouTube video ID from URL (Shorts 포함)
   static String? getYouTubeVideoId(String url) {
     final regExp = RegExp(
-      r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)',
+      r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([^&\n?#]+)',
       caseSensitive: false,
     );
 

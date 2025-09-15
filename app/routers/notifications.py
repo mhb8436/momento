@@ -282,3 +282,64 @@ async def broadcast_notification(
         "message": f"전체 {len(users)}명의 사용자에게 알림 브로드캐스트 요청이 처리되었습니다.",
         "firebase_result": firebase_result
     }
+
+
+@router.post("/test")
+async def send_test_notification(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    현재 사용자에게 테스트 알림을 발송합니다.
+    """
+    # 사용자의 FCM 토큰 조회
+    tokens_stmt = select(FCMToken).where(
+        and_(
+            FCMToken.user_id == current_user.id,
+            FCMToken.is_active == True
+        )
+    )
+    
+    tokens_result = await db.execute(tokens_stmt)
+    tokens = tokens_result.scalars().all()
+    
+    if not tokens:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="등록된 FCM 토큰이 없습니다. 앱을 다시 시작해주세요."
+        )
+    
+    # 테스트 알림 데이터
+    test_data = {
+        'type': 'test',
+        'message': '🎉 Firebase 연결이 정상적으로 작동합니다!',
+        'timestamp': datetime.now().isoformat()
+    }
+    
+    # Firebase를 통한 알림 발송
+    token_strings = [token.token for token in tokens]
+    firebase_result = await firebase_service.send_notification(
+        tokens=token_strings,
+        notification_type=NotificationType.APP_UPDATE,
+        title="🔥 MOMENTO 테스트 알림",
+        body="YouTube URL 추출 및 Firebase 알림이 정상 작동합니다!",
+        data=test_data
+    )
+    
+    # 알림 로그 저장
+    log = NotificationLog(
+        user_id=current_user.id,
+        notification_type=NotificationType.APP_UPDATE,
+        title="🔥 MOMENTO 테스트 알림",
+        body="YouTube URL 추출 및 Firebase 알림이 정상 작동합니다!",
+        data=json.dumps(test_data)
+    )
+    db.add(log)
+    await db.commit()
+    
+    return {
+        "message": f"{len(tokens)}개의 디바이스로 테스트 알림을 발송했습니다.",
+        "tokens_count": len(tokens),
+        "firebase_result": firebase_result,
+        "user_name": current_user.full_name or current_user.email
+    }

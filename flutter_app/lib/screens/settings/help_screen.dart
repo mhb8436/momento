@@ -337,26 +337,26 @@ class _HelpScreenState extends State<HelpScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildQuickActionButton(
-                  icon: Icons.video_library,
-                  title: '사용법 영상',
-                  onTap: () => _showVideoTutorial(),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildQuickActionButton(
-                  icon: Icons.chat_bubble_outline,
-                  title: '실시간 채팅',
-                  onTap: () => _startLiveChat(),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+          // Row(
+          //   children: [
+          //     Expanded(
+          //       child: _buildQuickActionButton(
+          //         icon: Icons.video_library,
+          //         title: '사용법 영상',
+          //         onTap: () => _showVideoTutorial(),
+          //       ),
+          //     ),
+          //     const SizedBox(width: 12),
+          //     Expanded(
+          //       child: _buildQuickActionButton(
+          //         icon: Icons.chat_bubble_outline,
+          //         title: '실시간 채팅',
+          //         onTap: () => _startLiveChat(),
+          //       ),
+          //     ),
+          //   ],
+          // ),
+          // const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -364,14 +364,6 @@ class _HelpScreenState extends State<HelpScreen> {
                   icon: Icons.email_outlined,
                   title: '이메일 문의',
                   onTap: () => _sendEmail(),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildQuickActionButton(
-                  icon: Icons.phone_outlined,
-                  title: '전화 상담',
-                  onTap: () => _callSupport(),
                 ),
               ),
             ],
@@ -520,14 +512,6 @@ class _HelpScreenState extends State<HelpScreen> {
     );
   }
 
-  void _startLiveChat() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('실시간 채팅 상담 서비스를 준비 중입니다.'),
-        backgroundColor: AppTheme.primaryColor,
-      ),
-    );
-  }
 
   void _sendEmail() {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -538,39 +522,6 @@ class _HelpScreenState extends State<HelpScreen> {
     );
   }
 
-  void _callSupport() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('전화 상담'),
-        content: const Text(
-          '고객 상담 전화번호\n\n'
-          '📞 1588-0000\n'
-          '⏰ 평일 09:00 - 18:00\n'
-          '(점심시간 12:00 - 13:00 제외)\n\n'
-          '전화를 걸까요?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('전화 앱으로 연결됩니다.'),
-                  backgroundColor: AppTheme.primaryColor,
-                ),
-              );
-            },
-            child: const Text('전화 걸기'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class HelpItem {

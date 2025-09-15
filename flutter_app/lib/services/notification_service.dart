@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/storage/local_storage_service.dart';
 import '../services/api/api_service.dart';
+import '../services/fcm_token_helper.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -26,7 +27,42 @@ class NotificationService {
   static const String _recipeChannelId = 'momento_recipe';
   static const String _systemChannelId = 'momento_system';
 
-  /// 알림 서비스 초기화
+  /// 비동기 알림 서비스 초기화 (백그라운드에서 실행)
+  static void initializeAsync() {
+    if (_initialized) return;
+    
+    // 백그라운드에서 비동기 초기화 시작
+    _initializeInBackground();
+  }
+
+  /// 백그라운드에서 알림 서비스 초기화
+  static Future<void> _initializeInBackground() async {
+    try {
+      print('🔔 NotificationService 백그라운드 초기화 시작');
+
+      // 1단계: 권한만 먼저 요청 (빠름)
+      await _requestPermissionsOnly();
+      
+      // 2단계: 로컬 알림 초기화
+      await _initializeLocalNotifications();
+      
+      // 3단계: 캐시된 토큰으로 먼저 설정
+      await _loadCachedToken();
+      
+      // 4단계: 백그라운드에서 토큰 갱신 및 서버 동기화
+      _refreshTokenInBackground();
+      
+      // 5단계: 메시지 핸들러 등록
+      await _setupMessageHandlers();
+      
+      _initialized = true;
+      print('✅ NotificationService 백그라운드 초기화 완료');
+    } catch (e) {
+      print('❌ NotificationService 백그라운드 초기화 실패: $e');
+    }
+  }
+
+  /// 기존 동기 초기화 메서드 (호환성 유지)
   static Future<void> initialize() async {
     if (_initialized) return;
 
@@ -86,7 +122,76 @@ class NotificationService {
     }
   }
 
-  /// Firebase 메시징 초기화
+  /// 권한만 요청 (빠른 초기화용)
+  static Future<void> _requestPermissionsOnly() async {
+    NotificationSettings settings = await _messaging.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+
+    print('🔔 알림 권한 상태: ${settings.authorizationStatus}');
+  }
+
+  /// 캐시된 토큰 로드
+  static Future<void> _loadCachedToken() async {
+    try {
+      String? cachedToken = LocalStorageService.getFCMToken();
+      if (cachedToken != null) {
+        _instance._fcmToken = cachedToken;
+        print('🔔 캐시된 FCM 토큰 로드 완료: ${cachedToken.substring(0, 20)}...');
+      }
+    } catch (e) {
+      print('⚠️ 캐시된 토큰 로드 실패: $e');
+    }
+  }
+
+  /// 백그라운드에서 토큰 갱신
+  static void _refreshTokenInBackground() {
+    Future.delayed(const Duration(seconds: 3), () async {
+      try {
+        print('🔄 백그라운드에서 FCM 토큰 갱신 시작');
+        await _instance._getFCMTokenWithDelay();
+      } catch (e) {
+        print('❌ 백그라운드 토큰 갱신 실패: $e');
+      }
+    });
+  }
+
+  /// 메시지 핸들러 설정
+  static Future<void> _setupMessageHandlers() async {
+    try {
+      // 포그라운드 메시지 리스너
+      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+
+      // 앱이 백그라운드에서 열렸을 때
+      FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+
+      // 앱이 완전히 종료된 상태에서 알림으로 열렸을 때
+      RemoteMessage? initialMessage = await _messaging.getInitialMessage();
+      if (initialMessage != null) {
+        _handleMessageOpenedApp(initialMessage);
+      }
+
+      // 토큰 갱신 리스너
+      _messaging.onTokenRefresh.listen((newToken) {
+        _instance._fcmToken = newToken;
+        LocalStorageService.saveFCMToken(newToken);
+        _instance._saveTokenToServerDeferred(newToken);
+      });
+
+      // 백그라운드 메시지 핸들러 등록
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    } catch (e) {
+      print('❌ 메시지 핸들러 설정 실패: $e');
+    }
+  }
+
+  /// Firebase 메시징 초기화 (기존 메서드, 호환성 유지)
   static Future<void> _initializeFirebaseMessaging() async {
     // 알림 권한 요청
     NotificationSettings settings = await _messaging.requestPermission(
@@ -101,7 +206,8 @@ class NotificationService {
 
     print('🔔 알림 권한 상태: ${settings.authorizationStatus}');
 
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+    if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional) {
       // FCM 토큰 획득 및 저장
       await _instance._getFCMToken();
 
@@ -171,19 +277,42 @@ class NotificationService {
   /// FCM 토큰 획득 및 서버 저장
   Future<void> _getFCMToken() async {
     try {
-      String? token = await _messaging.getToken();
+      String? token = await FCMTokenHelper.getValidFCMToken();
+      
       if (token != null) {
         _fcmToken = token;
-        print('🔔 FCM 토큰 획득: ${token.substring(0, 20)}...');
+        print('🔔 FCM 토큰 설정 완료: ${token.substring(0, 20)}...');
         
-        // 로컬 저장
+        // 로컬에 저장
         await LocalStorageService.saveFCMToken(token);
         
         // 서버에 저장
         await _saveTokenToServer(token);
+      } else {
+        print('❌ FCM 토큰을 얻을 수 없습니다');
       }
     } catch (e) {
       print('❌ FCM 토큰 획득 실패: $e');
+    }
+  }
+
+  /// FCM 토큰 획득 (지연 처리용)
+  Future<void> _getFCMTokenWithDelay() async {
+    try {
+      String? token = await FCMTokenHelper.getValidFCMTokenWithCache();
+      
+      if (token != null && token != _fcmToken) {
+        _fcmToken = token;
+        print('🔄 FCM 토큰 갱신 완료: ${token.substring(0, 20)}...');
+        
+        // 로컬에 저장
+        await LocalStorageService.saveFCMToken(token);
+        
+        // 서버에 지연 저장
+        _saveTokenToServerDeferred(token);
+      }
+    } catch (e) {
+      print('❌ FCM 토큰 갱신 실패: $e');
     }
   }
 
@@ -205,6 +334,13 @@ class NotificationService {
     } catch (e) {
       print('❌ FCM 토큰 서버 저장 실패: $e');
     }
+  }
+
+  /// FCM 토큰을 서버에 지연 저장
+  void _saveTokenToServerDeferred(String token) {
+    Future.delayed(const Duration(seconds: 5), () async {
+      await _saveTokenToServer(token);
+    });
   }
 
   /// 포그라운드 메시지 처리

@@ -4,9 +4,10 @@ from alembic import context
 from app.database import Base
 # Import all models to ensure they are registered with SQLAlchemy
 from app.models.user import User
-from app.models.audio import AudioFile  
 from app.models.recipe import Recipe
 from app.models.inquiry import Inquiry
+from app.models.notification import FCMToken, NotificationLog
+from app.models.credit import UserCredit, PaymentHistory, APIUsageLog, CreditPackage
 from app.config import settings
 
 # this is the Alembic Config object, which provides

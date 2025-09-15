@@ -4,6 +4,8 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.audio import TextProcessRequest, TextProcessResponse
 from app.utils.dependencies import get_current_active_user
+from app.services.credit_service import CreditService
+from app.models.credit import APIUsageType
 
 router = APIRouter()
 
@@ -14,11 +16,22 @@ async def process_transcript_text(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """클라이언트에서 처리된 음성 인식 텍스트를 받아서 레시피 생성"""
+    """클라이언트에서 처리된 음성 인식 텍스트를 받아서 레시피 생성 (크레딧 시스템 적용)"""
     
     try:
         print(f"🔍 텍스트 처리 시작: {len(request.transcript)} 문자")
         print(f"🔍 텍스트 내용 미리보기: {request.transcript[:100]}...")
+        
+        # 크레딧 시스템 체크
+        credit_service = CreditService(db)
+        
+        # API 사용 가능 여부 체크
+        can_use = await credit_service.can_use_api(str(current_user.id), APIUsageType.RECIPE_GENERATION)
+        if not can_use:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail="크레딧이 부족합니다. 크레딧을 구매하거나 다음 달 무료 크레딧을 기다려주세요."
+            )
         
         # GPT로 레시피 생성
         print(f"🔍 GPT 레시피 생성 시작")
@@ -30,6 +43,24 @@ async def process_transcript_text(
         
         if recipe_data:
             print(f"✅ GPT 레시피 생성 성공: {recipe_data['title']}")
+            
+            # 크레딧 차감
+            deduction_result = await credit_service.deduct_credit(
+                str(current_user.id),
+                APIUsageType.RECIPE_GENERATION,
+                {
+                    "recipe_title": recipe_data.get("title", ""),
+                    "transcript_length": len(request.transcript)
+                }
+            )
+            
+            if not deduction_result.success:
+                raise HTTPException(
+                    status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                    detail=deduction_result.message
+                )
+            
+            print(f"💳 크레딧 차감 완료 - 무료티어: {deduction_result.used_free_tier}, 잔액: {deduction_result.remaining_balance}")
             
             # 레시피 데이터베이스에 저장
             recipe = Recipe(

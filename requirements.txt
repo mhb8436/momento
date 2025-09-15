@@ -7,7 +7,7 @@ asyncpg==0.29.0
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 python-multipart==0.0.6
-openai==1.54.4
+openai==1.99.9
 python-dotenv==1.0.0
 pydantic[email]==2.5.0
 pydantic-settings==2.1.0
@@ -19,3 +19,4 @@ librosa==0.10.1
 soundfile==0.12.1
 httpx==0.26.0
 beautifulsoup4==4.12.2
+sqladmin==0.21.0

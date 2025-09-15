@@ -4,12 +4,17 @@
 
 echo "🚀 MOMENTO 서버를 시작합니다..."
 
-# 가상환경 활성화 확인
+# 가상환경 활성화
 if [[ "$VIRTUAL_ENV" == "" ]]; then
-    echo "⚠️  가상환경이 활성화되지 않았습니다."
-    echo "다음 명령어로 가상환경을 활성화해주세요:"
-    echo "source venv/bin/activate"
-    exit 1
+    if [ -f "venv/bin/activate" ]; then
+        echo "🔧 가상환경을 활성화합니다..."
+        source venv/bin/activate
+    else
+        echo "❌ 가상환경이 없습니다. 먼저 setup.sh를 실행해주세요."
+        exit 1
+    fi
+else
+    echo "✅ 가상환경이 이미 활성화되어 있습니다."
 fi
 
 # .env 파일 존재 확인

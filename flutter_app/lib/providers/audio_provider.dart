@@ -11,6 +11,7 @@ class AudioProvider extends ChangeNotifier {
   bool _isListening = false;
   bool _isProcessing = false;
   String? _errorMessage;
+  bool _needsCreditPurchase = false;
   String _currentTranscript = '';  // 현재 세션의 인식 결과
   String _accumulatedTranscript = '';  // 누적된 전체 텍스트
   StreamSubscription? _transcriptSubscription;
@@ -24,6 +25,7 @@ class AudioProvider extends ChangeNotifier {
   String get currentTranscript => _currentTranscript;
   String get accumulatedTranscript => _accumulatedTranscript;
   bool get hasAccumulatedText => _accumulatedTranscript.isNotEmpty;
+  bool get needsCreditPurchase => _needsCreditPurchase;
 
   /// Initialize STT service and set up streams
   Future<bool> initializeSTT() async {
@@ -218,10 +220,20 @@ class AudioProvider extends ChangeNotifier {
       debugPrint('📝 최종 내용: ${finalTranscript.length > 200 ? finalTranscript.substring(0, 200) + "..." : finalTranscript}');
       
       // Send final transcript to server for recipe processing
+      // Note: Credit validation is handled by the backend at /audio/process-text endpoint
+      // The backend will return 402 status if credits are insufficient
       final processResult = await _audioService.processTranscript(finalTranscript);
 
       if (!processResult.isSuccess) {
-        _setError(processResult.message ?? '레시피 생성에 실패했습니다.');
+        // Check if it's a credit-related error (402 status)
+        if (processResult.message?.contains('크레딧') == true || 
+            processResult.message?.contains('credit') == true ||
+            processResult.message?.contains('402') == true) {
+          _needsCreditPurchase = true;
+          _setError('크레딧이 부족합니다. 크레딧을 구매하거나 무료 크레딧을 기다려주세요.');
+        } else {
+          _setError(processResult.message ?? '레시피 생성에 실패했습니다.');
+        }
         return false;
       }
 

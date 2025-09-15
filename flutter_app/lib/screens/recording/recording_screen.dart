@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import '../../l10n/app_localizations.dart';
 import '../../config/theme.dart';
 import '../../providers/audio_provider.dart';
 import '../../providers/recipe_provider.dart';
 import '../../widgets/common/custom_icon_button.dart';
+import '../../widgets/credit/credit_required_dialog.dart';
 import '../../services/cache_service.dart';
 
 class RecordingScreen extends StatefulWidget {
@@ -83,7 +86,7 @@ class _RecordingScreenState extends State<RecordingScreen>
           ),
           const Spacer(),
           Text(
-            '음성 인식',
+            AppLocalizations.of(context)!.voiceRecognition,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
@@ -123,7 +126,7 @@ class _RecordingScreenState extends State<RecordingScreen>
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        '오프라인 상태입니다. 음성 인식은 온라인 상태에서만 가능합니다.',
+                        AppLocalizations.of(context)!.offlineRecognition,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Colors.orange.shade700,
                         ),
@@ -157,7 +160,7 @@ class _RecordingScreenState extends State<RecordingScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    audioProvider.isListening ? '음성 인식 중' : '대기 중',
+                    audioProvider.isListening ? AppLocalizations.of(context)!.recognizing : AppLocalizations.of(context)!.waiting,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: audioProvider.isListening 
                           ? AppTheme.primaryColor 
@@ -197,7 +200,7 @@ class _RecordingScreenState extends State<RecordingScreen>
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          '누적된 내용 (${audioProvider.accumulatedTranscript.length}자)',
+                          AppLocalizations.of(context)!.accumulatedContent(audioProvider.accumulatedTranscript.length),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: AppTheme.primaryColor,
@@ -213,7 +216,7 @@ class _RecordingScreenState extends State<RecordingScreen>
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              '초기화',
+                              AppLocalizations.of(context)!.initialize,
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: AppTheme.errorColor,
                                 fontWeight: FontWeight.w500,
@@ -275,7 +278,7 @@ class _RecordingScreenState extends State<RecordingScreen>
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        audioProvider.isListening ? '현재 인식 중' : '음성 입력 대기',
+                        audioProvider.isListening ? AppLocalizations.of(context)!.currentlyRecognizing : AppLocalizations.of(context)!.waitingForVoice,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: audioProvider.isListening ? AppTheme.primaryColor : AppTheme.textSecondary,
@@ -343,8 +346,8 @@ class _RecordingScreenState extends State<RecordingScreen>
                   const SizedBox(height: 12),
                   Text(
                     audioProvider.isListening 
-                        ? '요리법을 자세히 말씀해주세요'
-                        : '음성 인식을 시작하세요',
+                        ? AppLocalizations.of(context)!.speakRecipeDetails
+                        : AppLocalizations.of(context)!.startVoiceRecognitionPrompt,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimary,
@@ -354,8 +357,8 @@ class _RecordingScreenState extends State<RecordingScreen>
                   const SizedBox(height: 8),
                   Text(
                     audioProvider.isListening
-                        ? '재료, 조리법, 팁 등을 포함해서 말씀해주세요'
-                        : '마이크 권한을 허용하고 인식 버튼을 눌러주세요',
+                        ? AppLocalizations.of(context)!.includeIngredientsAndStepsLong
+                        : AppLocalizations.of(context)!.allowMicrophonePermission,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppTheme.textSecondary,
                     ),
@@ -568,8 +571,8 @@ class _RecordingScreenState extends State<RecordingScreen>
                   ),
                   child: Text(
                     audioProvider.hasAccumulatedText 
-                        ? '더 추가하려면 음성 인식 버튼을, 완료하려면 레시피 작성 버튼을 누르세요'
-                        : '더 추가하려면 음성 인식 버튼을 다시 누르세요',
+                        ? AppLocalizations.of(context)!.moreInstructionsVoice
+                        : AppLocalizations.of(context)!.moreInstructionsVoiceAgain,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.primaryColor,
                       fontWeight: FontWeight.w500,
@@ -679,28 +682,70 @@ class _RecordingScreenState extends State<RecordingScreen>
     final finalTranscript = audioProvider.getFinalTranscript();
     if (finalTranscript.isEmpty) return;
 
-    // Show loading dialog
+    // Show loading dialog with new style
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Text(
-              '음성을 분석하고 레시피를 생성하고 있습니다...',
-              style: Theme.of(context).textTheme.bodyMedium,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.95),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1,
             ),
-            const SizedBox(height: 8),
-            Text(
-              '총 ${finalTranscript.length}자의 내용을 처리 중입니다.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.textSecondary,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
-            ),
-          ],
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.secondaryColor.withOpacity(0.1),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: SpinKitPulsingGrid(
+                  color: AppTheme.primaryColor,
+                  size: 50,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                AppLocalizations.of(context)!.processingAndGenerating,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                AppLocalizations.of(context)!.processingCharactersCount(finalTranscript.length),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -722,18 +767,26 @@ class _RecordingScreenState extends State<RecordingScreen>
           }
           
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('🎉 레시피가 성공적으로 생성되었습니다!'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.recipeCreated),
               backgroundColor: AppTheme.primaryColor,
             ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('처리 중 오류가 발생했습니다: ${audioProvider.errorMessage}'),
-              backgroundColor: AppTheme.errorColor,
-            ),
-          );
+          // Check if credit purchase is needed
+          if (audioProvider.needsCreditPurchase) {
+            CreditRequiredDialog.show(
+              context,
+              action: '음성 레시피 생성',
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('처리 중 오류가 발생했습니다: ${audioProvider.errorMessage}'),
+                backgroundColor: AppTheme.errorColor,
+              ),
+            );
+          }
         }
       }
     } catch (e) {

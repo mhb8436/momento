@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../widgets/common/custom_icon_button.dart';
+import '../../widgets/credit/credit_required_dialog.dart';
+import '../../providers/credit_provider.dart';
 import '../recording/recording_screen.dart';
 import '../ocr/ocr_screen.dart';
 import '../text_input/text_input_screen.dart';
@@ -108,14 +111,11 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
           subtitle: '요리 과정을 자세히 말씀해주시면\nAI가 체계적인 레시피로 정리해드립니다',
           gradient: AppTheme.primaryGradient,
           isMain: true,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const RecordingScreen(),
-              ),
-            );
-          },
+          onTap: () => _navigateWithCreditCheck(
+            context,
+            '음성 레시피 생성',
+            () => const RecordingScreen(),
+          ),
         ),
         const SizedBox(height: 16),
         
@@ -130,14 +130,11 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                 gradient: const LinearGradient(
                   colors: [Color(0xFF6C63FF), Color(0xFF9C88FF)],
                 ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const OCRScreen(),
-                    ),
-                  );
-                },
+                onTap: () => _navigateWithCreditCheck(
+                  context,
+                  'OCR 레시피 생성',
+                  () => const OCRScreen(),
+                ),
                 isCompact: true,
               ),
             ),
@@ -150,14 +147,11 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                 gradient: const LinearGradient(
                   colors: [Color(0xFF26D0CE), Color(0xFF1A9B9A)],
                 ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const TextInputScreen(),
-                    ),
-                  );
-                },
+                onTap: () => _navigateWithCreditCheck(
+                  context,
+                  '텍스트 레시피 생성',
+                  () => const TextInputScreen(),
+                ),
                 isCompact: true,
               ),
             ),
@@ -170,14 +164,11 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                 gradient: const LinearGradient(
                   colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)],
                 ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const UrlInputScreen(),
-                    ),
-                  );
-                },
+                onTap: () => _navigateWithCreditCheck(
+                  context,
+                  'URL 레시피 생성',
+                  () => const UrlInputScreen(),
+                ),
                 isCompact: true,
               ),
             ),
@@ -376,5 +367,47 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
         ),
       ],
     );
+  }
+
+  /// 크레딧 확인 후 화면 이동
+  Future<void> _navigateWithCreditCheck(
+    BuildContext context,
+    String action,
+    Widget Function() screenBuilder,
+  ) async {
+    final creditProvider = context.read<CreditProvider>();
+    
+    try {
+      // 크레딧 사용 가능 여부 확인
+      final canUse = await creditProvider.canUseCreditsForRecipe();
+      
+      if (canUse) {
+        // 크레딧이 충분하면 바로 화면 이동
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => screenBuilder(),
+            ),
+          );
+        }
+      } else {
+        // 크레딧이 부족하면 구매 안내 다이얼로그 표시
+        if (mounted) {
+          CreditRequiredDialog.show(
+            context,
+            action: action,
+          );
+        }
+      }
+    } catch (e) {
+      // 오류 발생 시에도 크레딧 부족으로 간주하고 다이얼로그 표시
+      if (mounted) {
+        CreditRequiredDialog.show(
+          context,
+          action: action,
+        );
+      }
+    }
   }
 }

@@ -9,7 +9,26 @@
       "Bash(touch:*)",
       "Bash(uvicorn:*)",
       "Bash(pkill:*)",
-      "Bash(flutter analyze:*)"
+      "Bash(flutter analyze:*)",
+      "Bash(flutter clean:*)",
+      "Bash(flutter pub:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(flutter build:*)",
+      "Bash(rm:*)",
+      "Bash(pod install:*)",
+      "Bash(flutter doctor:*)",
+      "Bash(alembic current:*)",
+      "Bash(psql:*)",
+      "Bash(alembic mark-revision:*)",
+      "Bash(alembic stamp:*)",
+      "Bash(find:*)",
+      "Bash(flutter run:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(curl:*)",
+      "Bash(/dev/null)",
+      "WebFetch(domain:aminalaee.github.io)",
+      "WebFetch(domain:aminalaee.dev)"
     ],
     "deny": []
   }

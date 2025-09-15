@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/common/custom_text_field.dart';
@@ -39,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.errorMessage ?? '로그인에 실패했습니다.'),
+          content: Text(authProvider.errorMessage ?? AppLocalizations.of(context)!.error),
           backgroundColor: AppTheme.errorColor,
         ),
       );
@@ -53,6 +54,8 @@ class _LoginScreenState extends State<LoginScreen> {
         builder: (context, authProvider, _) {
           return LoadingOverlay(
             isLoading: authProvider.isLoading,
+            style: LoadingStyle.modern,
+            message: AppLocalizations.of(context)!.loading,
             child: Container(
               decoration: const BoxDecoration(
                 gradient: AppTheme.backgroundGradient,
@@ -111,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 24),
         Text(
-          'MOMENTO',
+          AppLocalizations.of(context)!.appTitle,
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimary,
@@ -119,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          '엄마의 소중한 요리법을\n음성으로 기록하고 공유해보세요',
+          AppLocalizations.of(context)!.appSubtitle,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: AppTheme.textSecondary,
@@ -150,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              '로그인',
+              AppLocalizations.of(context)!.login,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textPrimary,
@@ -162,17 +165,17 @@ class _LoginScreenState extends State<LoginScreen> {
             // Email Field
             CustomTextField(
               controller: _emailController,
-              label: '이메일',
+              label: AppLocalizations.of(context)!.email,
               hintText: 'example@email.com',
               prefixIcon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return '이메일을 입력해주세요';
+                  return AppLocalizations.of(context)!.enterEmail;
                 }
                 if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                  return '올바른 이메일 형식을 입력해주세요';
+                  return AppLocalizations.of(context)!.invalidEmail;
                 }
                 return null;
               },
@@ -182,8 +185,8 @@ class _LoginScreenState extends State<LoginScreen> {
             // Password Field
             CustomTextField(
               controller: _passwordController,
-              label: '비밀번호',
-              hintText: '비밀번호를 입력해주세요',
+              label: AppLocalizations.of(context)!.password,
+              hintText: AppLocalizations.of(context)!.enterPassword,
               prefixIcon: Icons.lock_outlined,
               obscureText: _obscurePassword,
               textInputAction: TextInputAction.done,
@@ -199,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return '비밀번호를 입력해주세요';
+                  return AppLocalizations.of(context)!.enterPassword;
                 }
                 return null;
               },
@@ -208,10 +211,16 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 24),
             
             // Login Button
-            CustomButton(
-              text: '로그인',
-              onPressed: _handleLogin,
-              gradient: AppTheme.primaryGradient,
+            Consumer<AuthProvider>(
+              builder: (context, authProvider, _) {
+                return CustomButton(
+                  text: AppLocalizations.of(context)!.loginButton,
+                  onPressed: authProvider.isLoading ? null : _handleLogin,
+                  isLoading: authProvider.isLoading,
+                  loadingStyle: LoadingStyle.modern,
+                  gradient: AppTheme.primaryGradient,
+                );
+              },
             ),
           ],
         ),
@@ -224,7 +233,7 @@ class _LoginScreenState extends State<LoginScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          '계정이 없으신가요? ',
+          AppLocalizations.of(context)!.dontHaveAccount,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         TextButton(
@@ -235,7 +244,7 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           },
           child: Text(
-            '회원가입',
+            AppLocalizations.of(context)!.signup,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppTheme.primaryColor,
               fontWeight: FontWeight.w600,

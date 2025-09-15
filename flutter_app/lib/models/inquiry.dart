@@ -14,20 +14,10 @@ enum InquiryStatus {
 enum InquiryCategory {
   @JsonValue('general')
   general,
-  @JsonValue('bug')
-  bug,
-  @JsonValue('feature')
-  feature,
-  @JsonValue('account')
-  account,
-  @JsonValue('recipe')
-  recipe,
-  @JsonValue('audio')
-  audio,
-  @JsonValue('ui')
-  ui,
-  @JsonValue('performance')
-  performance,
+  @JsonValue('problem')
+  problem,
+  @JsonValue('suggestion')
+  suggestion,
 }
 
 extension InquiryStatusExtension on InquiryStatus {
@@ -59,20 +49,10 @@ extension InquiryCategoryExtension on InquiryCategory {
     switch (this) {
       case InquiryCategory.general:
         return '일반 문의';
-      case InquiryCategory.bug:
-        return '버그 신고';
-      case InquiryCategory.feature:
-        return '기능 제안';
-      case InquiryCategory.account:
-        return '계정 문의';
-      case InquiryCategory.recipe:
-        return '레시피 관련';
-      case InquiryCategory.audio:
-        return '음성 관련';
-      case InquiryCategory.ui:
-        return 'UI/UX 관련';
-      case InquiryCategory.performance:
-        return '성능 관련';
+      case InquiryCategory.problem:
+        return '문제 신고';
+      case InquiryCategory.suggestion:
+        return '개선 제안';
     }
   }
   
@@ -80,20 +60,21 @@ extension InquiryCategoryExtension on InquiryCategory {
     switch (this) {
       case InquiryCategory.general:
         return '💬';
-      case InquiryCategory.bug:
-        return '🐛';
-      case InquiryCategory.feature:
+      case InquiryCategory.problem:
+        return '🚨';
+      case InquiryCategory.suggestion:
         return '💡';
-      case InquiryCategory.account:
-        return '👤';
-      case InquiryCategory.recipe:
-        return '🍳';
-      case InquiryCategory.audio:
-        return '🎤';
-      case InquiryCategory.ui:
-        return '🎨';
-      case InquiryCategory.performance:
-        return '⚡';
+    }
+  }
+  
+  String get description {
+    switch (this) {
+      case InquiryCategory.general:
+        return '계정, 사용법, 기타 궁금한 점';
+      case InquiryCategory.problem:
+        return '버그, 오류, 성능 문제 등';
+      case InquiryCategory.suggestion:
+        return '새로운 기능이나 개선 아이디어';
     }
   }
 }

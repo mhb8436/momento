@@ -217,6 +217,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         child: SafeArea(
           child: LoadingOverlay(
             isLoading: _isLoading,
+            style: LoadingStyle.modern,
+            message: '프로필을 업데이트하고 있습니다...',
             child: Column(
               children: [
                 _buildAppBar(),

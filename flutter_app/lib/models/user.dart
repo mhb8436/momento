@@ -4,7 +4,7 @@ import 'package:hive/hive.dart';
 part 'user.g.dart';
 
 @JsonSerializable()
-@HiveType(typeId: 3)
+@HiveType(typeId: 7)
 class User {
   @HiveField(0)
   final String id;

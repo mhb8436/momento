@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../config/theme.dart';
 import '../../config/app_config.dart';
+import '../../services/storage/local_storage_service.dart';
+import '../../services/fcm_token_helper.dart';
 
 class AppInfoScreen extends StatefulWidget {
   const AppInfoScreen({super.key});
@@ -36,6 +41,10 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                       _buildAppInfo(),
                       const SizedBox(height: 40),
                       _buildDeveloperInfo(),
+                      if (kDebugMode) ...[
+                        const SizedBox(height: 40),
+                        _buildDebugInfo(),
+                      ],
                       const SizedBox(height: 40),
                       _buildLegalInfo(),
                     ],
@@ -417,6 +426,367 @@ SQLAlchemy
               ),
             ),
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              '확인',
+              style: TextStyle(color: AppTheme.primaryColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDebugInfo() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.orange.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.developer_mode,
+                color: Colors.orange,
+                size: 28,
+              ),
+              const SizedBox(width: 16),
+              Text(
+                '🔧 개발자 도구',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildDebugItem(
+            '🔔 Firebase 알림 테스트',
+            'FCM 토큰 복사 및 알림 테스트',
+            () => _copyFCMToken(),
+          ),
+          const SizedBox(height: 12),
+          _buildDebugItem(
+            '📱 디바이스 정보',
+            '플랫폼 및 버전 정보',
+            () => _showDeviceInfo(),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '⚠️ 디버그 모드에서만 표시됩니다',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.orange.shade700,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDebugItem(String title, String subtitle, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.orange.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _copyFCMToken() async {
+    try {
+      // 먼저 알림 권한 상태 확인
+      final messaging = FirebaseMessaging.instance;
+      final settings = await messaging.getNotificationSettings();
+      
+      print('🔍 알림 권한 상태: ${settings.authorizationStatus}');
+      print('🔍 저장된 FCM 토큰 확인 중...');
+      
+      // 로컬 저장소에서 FCM 토큰 가져오기
+      String? token = LocalStorageService.getFCMToken();
+      
+      if (token == null || token.isEmpty) {
+        // 알림 권한이 없으면 상태 안내 (중복 요청 방지)
+        if (settings.authorizationStatus != AuthorizationStatus.authorized &&
+            settings.authorizationStatus != AuthorizationStatus.provisional) {
+          _showPermissionStatusDialog(settings.authorizationStatus);
+          return;
+        }
+        
+        // 권한은 있지만 토큰이 없으면 토큰 재생성 시도
+        try {
+          print('🔄 FCM 토큰 재생성 시도 중...');
+          token = await FCMTokenHelper.regenerateFCMToken();
+        } catch (e) {
+          print('❌ FCM 토큰 생성 실패: $e');
+        }
+        
+        if (token == null || token.isEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('❌ FCM 토큰 생성에 실패했습니다. Firebase 설정을 확인해주세요.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      // 클립보드에 복사
+      await Clipboard.setData(ClipboardData(text: token));
+
+      // Firebase Console 안내 다이얼로그
+      if (mounted) {
+        showDialog(
+          context: context,
+        builder: (context) => AlertDialog(
+          title: const Text(
+            '🔔 FCM 토큰 복사 완료',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '📋 FCM 토큰이 클립보드에 복사되었습니다.',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '🔥 Firebase Console에서 테스트:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text('1. console.firebase.google.com 접속'),
+                    const Text('2. 프로젝트 선택'),
+                    const Text('3. Messaging → 첫 번째 캠페인'),
+                    const Text('4. 테스트 메시지 전송'),
+                    const Text('5. FCM 토큰 붙여넣기'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '토큰: ${token != null && token.length > 30 ? "${token.substring(0, 30)}..." : token ?? "없음"}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                '확인',
+                style: TextStyle(color: AppTheme.primaryColor),
+              ),
+            ),
+          ],
+        ),
+        );
+      }
+
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ 오류 발생: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showDeviceInfo() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          '📱 디바이스 정보',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('플랫폼: ${Theme.of(context).platform.name}'),
+            Text('디버그 모드: ${kDebugMode ? "활성화" : "비활성화"}'),
+            Text('앱 버전: ${AppConfig.appVersion}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              '확인',
+              style: TextStyle(color: AppTheme.primaryColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPermissionStatusDialog(AuthorizationStatus status) {
+    String statusText;
+    String actionText;
+    IconData iconData;
+    Color iconColor;
+
+    switch (status) {
+      case AuthorizationStatus.denied:
+        statusText = '❌ 알림 권한이 거부되었습니다';
+        actionText = '디바이스 설정에서 알림 권한을 허용해주세요.';
+        iconData = Icons.notifications_off;
+        iconColor = Colors.red;
+        break;
+      case AuthorizationStatus.notDetermined:
+        statusText = '⚠️ 알림 권한을 요청하지 않았습니다';
+        actionText = '앱을 다시 시작하면 알림 권한을 요청합니다.';
+        iconData = Icons.help_outline;
+        iconColor = Colors.orange;
+        break;
+      default:
+        statusText = '⚠️ 알림 권한 상태: ${status.name}';
+        actionText = '알림 권한을 확인해주세요.';
+        iconData = Icons.warning;
+        iconColor = Colors.orange;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(iconData, color: iconColor, size: 24),
+            const SizedBox(width: 12),
+            const Text(
+              '🔔 알림 권한 필요',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              statusText,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              actionText,
+              style: const TextStyle(color: AppTheme.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '📱 설정에서 알림 허용하기:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('1. 디바이스 설정 앱 열기'),
+                  const Text('2. MOMENTO 앱 찾기'),
+                  const Text('3. 알림 → 허용 켜기'),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '💡 권한 허용 후 앱을 다시 시작해주세요.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(

@@ -1,0 +1,352 @@
+{% extends "list.html" %}
+
+{% block head %}
+{{ super() }}
+<style>
+.notification-send-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+.notification-send-btn:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.close {
+    color: white;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close:hover {
+    opacity: 0.8;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e1e5e9;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    font-size: 16px;
+}
+
+.btn-submit:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+.btn-submit:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.radio-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 5px;
+}
+
+.radio-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.alert {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+#userIdsGroup {
+    display: none;
+}
+</style>
+{% endblock %}
+
+{% block toolbar %}
+{{ super() }}
+<div style="margin-bottom: 15px;">
+    <button class="notification-send-btn" onclick="openNotificationModal()">
+        <i class="fas fa-paper-plane"></i> 알림 발송
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+{{ super() }}
+
+<!-- 알림 발송 모달 -->
+<div id="notificationModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-paper-plane"></i> 알림 발송</h2>
+            <span class="close" onclick="closeNotificationModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="alertContainer"></div>
+            
+            <form id="notificationForm">
+                <div class="form-group">
+                    <label for="title">제목 *</label>
+                    <input type="text" id="title" name="title" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="body">내용 *</label>
+                    <textarea id="body" name="body" class="form-control" rows="4" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notification_type">알림 유형</label>
+                    <select id="notification_type" name="notification_type" class="form-control">
+                        <option value="app_update">앱 업데이트</option>
+                        <option value="new_feature">새 기능</option>
+                        <option value="maintenance">점검 안내</option>
+                        <option value="promotion">프로모션</option>
+                        <option value="general">일반</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>발송 대상</label>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="target" value="all" checked onchange="toggleUserIds()">
+                            <span>전체 사용자 (<span id="activeUsersCount">0</span>명)</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="target" value="specific" onchange="toggleUserIds()">
+                            <span>특정 사용자</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div id="userIdsGroup" class="form-group">
+                    <label for="user_ids">사용자 ID (쉼표로 구분)</label>
+                    <input type="text" id="user_ids" name="user_ids" class="form-control" 
+                           placeholder="예: user1, user2, user3">
+                </div>
+                
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-paper-plane"></i> 알림 발송
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let activeUsersCount = 0;
+
+// 페이지 로드시 활성 사용자 수 조회
+document.addEventListener('DOMContentLoaded', function() {
+    fetchActiveUsersCount();
+});
+
+async function fetchActiveUsersCount() {
+    try {
+        const response = await fetch('/admin/notification/api/users-count');
+        if (response.ok) {
+            const data = await response.json();
+            activeUsersCount = data.count;
+            document.getElementById('activeUsersCount').textContent = activeUsersCount;
+        }
+    } catch (error) {
+        console.error('활성 사용자 수 조회 실패:', error);
+        // 실패시 기본값 사용
+        document.getElementById('activeUsersCount').textContent = '?';
+    }
+}
+
+function openNotificationModal() {
+    document.getElementById('notificationModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeNotificationModal() {
+    document.getElementById('notificationModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    clearForm();
+}
+
+function toggleUserIds() {
+    const target = document.querySelector('input[name="target"]:checked').value;
+    const userIdsGroup = document.getElementById('userIdsGroup');
+    
+    if (target === 'specific') {
+        userIdsGroup.style.display = 'block';
+        document.getElementById('user_ids').required = true;
+    } else {
+        userIdsGroup.style.display = 'none';
+        document.getElementById('user_ids').required = false;
+    }
+}
+
+function clearForm() {
+    document.getElementById('notificationForm').reset();
+    document.getElementById('userIdsGroup').style.display = 'none';
+    document.getElementById('alertContainer').innerHTML = '';
+}
+
+function showAlert(message, type) {
+    const alertContainer = document.getElementById('alertContainer');
+    alertContainer.innerHTML = `
+        <div class="alert alert-${type}">
+            ${message}
+        </div>
+    `;
+}
+
+// 폼 제출 처리
+document.getElementById('notificationForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const submitButton = e.target.querySelector('.btn-submit');
+    const originalText = submitButton.innerHTML;
+    
+    // 로딩 상태
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 발송 중...';
+    
+    try {
+        const formData = new FormData(e.target);
+        
+        const response = await fetch('/admin/notification/send', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            // 성공 메시지 표시
+            showAlert('알림이 성공적으로 발송되었습니다.', 'success');
+            
+            // 폼 초기화
+            clearForm();
+            
+            // 3초 후 모달 닫기 및 페이지 새로고침
+            setTimeout(() => {
+                closeNotificationModal();
+                window.location.reload();
+            }, 2000);
+            
+        } else {
+            showAlert('알림 발송 중 오류가 발생했습니다.', 'error');
+        }
+        
+    } catch (error) {
+        console.error('알림 발송 오류:', error);
+        showAlert('네트워크 오류가 발생했습니다.', 'error');
+    } finally {
+        // 버튼 상태 복원
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
+    }
+});
+
+// 모달 외부 클릭시 닫기
+window.onclick = function(event) {
+    const modal = document.getElementById('notificationModal');
+    if (event.target == modal) {
+        closeNotificationModal();
+    }
+}
+
+// ESC 키로 모달 닫기
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeNotificationModal();
+    }
+});
+</script>
+{% endblock %}

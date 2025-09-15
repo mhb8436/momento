@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -24,6 +26,16 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>이 앱은 레시피 이미지를 촬영하여 텍스트를 인식하기 위해 카메라 권한이 필요합니다.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>이 앱은 요리법을 음성으로 입력하기 위해 마이크 권한이 필요합니다.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>이 앱은 갤러리에서 레시피 이미지를 선택하여 텍스트를 인식하기 위해 사진 라이브러리 권한이 필요합니다.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>이 앱은 음성을 텍스트로 변환하여 요리법을 자동으로 입력하기 위해 음성 인식 권한이 필요합니다.</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -41,20 +53,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<!-- Audio Recording & Speech Recognition Permissions -->
-	<key>NSMicrophoneUsageDescription</key>
-	<string>이 앱은 요리법을 음성으로 입력하기 위해 마이크 권한이 필요합니다.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>이 앱은 음성을 텍스트로 변환하여 요리법을 자동으로 입력하기 위해 음성 인식 권한이 필요합니다.</string>
-	
-	<!-- Camera & Photo Library Permissions -->
-	<key>NSCameraUsageDescription</key>
-	<string>이 앱은 레시피 이미지를 촬영하여 텍스트를 인식하기 위해 카메라 권한이 필요합니다.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>이 앱은 갤러리에서 레시피 이미지를 선택하여 텍스트를 인식하기 위해 사진 라이브러리 권한이 필요합니다.</string>
 </dict>
 </plist>

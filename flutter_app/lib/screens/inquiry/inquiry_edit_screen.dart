@@ -23,7 +23,7 @@ class _InquiryEditScreenState extends State<InquiryEditScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _contentController;
-  
+
   late InquiryCategory _selectedCategory;
   bool _isLoading = false;
   bool _hasChanges = false;
@@ -31,12 +31,12 @@ class _InquiryEditScreenState extends State<InquiryEditScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // 기존 값으로 초기화
     _titleController = TextEditingController(text: widget.inquiry.title);
     _contentController = TextEditingController(text: widget.inquiry.content);
     _selectedCategory = widget.inquiry.category;
-    
+
     // 변경 감지를 위한 리스너 추가
     _titleController.addListener(_onContentChanged);
     _contentController.addListener(_onContentChanged);
@@ -51,9 +51,9 @@ class _InquiryEditScreenState extends State<InquiryEditScreen> {
 
   void _onContentChanged() {
     final hasChanges = _titleController.text.trim() != widget.inquiry.title ||
-                      _contentController.text.trim() != widget.inquiry.content ||
-                      _selectedCategory != widget.inquiry.category;
-    
+        _contentController.text.trim() != widget.inquiry.content ||
+        _selectedCategory != widget.inquiry.category;
+
     if (hasChanges != _hasChanges) {
       setState(() {
         _hasChanges = hasChanges;
@@ -119,9 +119,9 @@ class _InquiryEditScreenState extends State<InquiryEditScreen> {
           Text(
             '문의사항 수정',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
-            ),
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
           ),
           const Spacer(),
           const SizedBox(width: 48), // Balance the back button
@@ -154,9 +154,9 @@ class _InquiryEditScreenState extends State<InquiryEditScreen> {
               Text(
                 '수정 안내',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
               ),
             ],
           ),
@@ -165,9 +165,9 @@ class _InquiryEditScreenState extends State<InquiryEditScreen> {
             '답변이 달리기 전까지만 문의사항을 수정할 수 있습니다.\n'
             '수정 후에는 다시 검토 과정을 거치게 됩니다.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppTheme.textSecondary,
-              height: 1.4,
-            ),
+                  color: AppTheme.textSecondary,
+                  height: 1.4,
+                ),
           ),
         ],
       ),
@@ -203,17 +203,17 @@ class _InquiryEditScreenState extends State<InquiryEditScreen> {
                   Text(
                     category.displayName,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                          color: AppTheme.textPrimary,
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                 ],
               ),
               subtitle: Text(
                 _getCategoryDescription(category),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
+                      color: AppTheme.textSecondary,
+                    ),
               ),
               value: category,
               groupValue: _selectedCategory,
@@ -289,8 +289,8 @@ class _InquiryEditScreenState extends State<InquiryEditScreen> {
             ),
           ),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppTheme.textPrimary,
-          ),
+                color: AppTheme.textPrimary,
+              ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
               return '문의 내용을 입력해주세요';
@@ -364,9 +364,9 @@ class _InquiryEditScreenState extends State<InquiryEditScreen> {
               Text(
                 '수정 시 주의사항',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.orange,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
               ),
             ],
           ),
@@ -376,9 +376,9 @@ class _InquiryEditScreenState extends State<InquiryEditScreen> {
             '• 수정된 내용은 다시 검토 과정을 거치게 됩니다\n'
             '• 중요한 정보가 누락되지 않도록 신중히 작성해주세요',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppTheme.textSecondary,
-              height: 1.5,
-            ),
+                  color: AppTheme.textSecondary,
+                  height: 1.5,
+                ),
           ),
         ],
       ),
@@ -395,9 +395,9 @@ class _InquiryEditScreenState extends State<InquiryEditScreen> {
         Text(
           title,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
-          ),
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
         ),
         const SizedBox(height: 12),
         child,
@@ -409,20 +409,10 @@ class _InquiryEditScreenState extends State<InquiryEditScreen> {
     switch (category) {
       case InquiryCategory.general:
         return '일반적인 문의사항이나 의견';
-      case InquiryCategory.bug:
+      case InquiryCategory.problem:
         return '앱 오류나 버그 발견 시';
-      case InquiryCategory.feature:
+      case InquiryCategory.suggestion:
         return '새로운 기능에 대한 제안';
-      case InquiryCategory.account:
-        return '계정 관련 문의 (로그인, 비밀번호 등)';
-      case InquiryCategory.recipe:
-        return '레시피 생성 및 관리 관련';
-      case InquiryCategory.audio:
-        return '음성 녹음 및 처리 관련';
-      case InquiryCategory.ui:
-        return '화면 디자인이나 사용성 관련';
-      case InquiryCategory.performance:
-        return '속도나 성능 관련 문제';
     }
   }
 
@@ -435,7 +425,7 @@ class _InquiryEditScreenState extends State<InquiryEditScreen> {
 
     try {
       final provider = Provider.of<InquiryProvider>(context, listen: false);
-      
+
       final request = InquiryUpdateRequest(
         title: _titleController.text.trim(),
         content: _contentController.text.trim(),

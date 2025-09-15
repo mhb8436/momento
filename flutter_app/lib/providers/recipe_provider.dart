@@ -2,9 +2,11 @@ import 'package:flutter/foundation.dart';
 import '../models/recipe.dart';
 import '../services/api/recipe_service.dart';
 import '../services/cache_service.dart';
+import '../services/credit/credit_service.dart';
 
 class RecipeProvider extends ChangeNotifier {
   final RecipeService _recipeService = RecipeService();
+  final CreditService _creditService = CreditService();
   
   List<Recipe> _recipes = [];
   bool _isLoading = false;
@@ -12,6 +14,7 @@ class RecipeProvider extends ChangeNotifier {
   String? _errorMessage;
   Recipe? _currentRecipe;
   bool _isOfflineMode = false;
+  bool _needsCreditPurchase = false;
 
   List<Recipe> get recipes => _recipes;
   bool get isLoading => _isLoading;
@@ -19,6 +22,7 @@ class RecipeProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   Recipe? get currentRecipe => _currentRecipe;
   bool get isOfflineMode => _isOfflineMode;
+  bool get needsCreditPurchase => _needsCreditPurchase;
 
   Future<void> loadRecipes() async {
     _setLoading(true);
@@ -88,9 +92,42 @@ class RecipeProvider extends ChangeNotifier {
     }
   }
 
+  /// 크레딧 사용 가능 여부 확인
+  Future<bool> canUseCreditsForRecipe() async {
+    try {
+      return await _creditService.checkCreditAvailability();
+    } catch (e) {
+      print('❌ 크레딧 확인 실패: $e');
+      return false;
+    }
+  }
+
+  /// 크레딧 차감 및 레시피 생성 권한 확인
+  Future<bool> _checkAndDeductCredits() async {
+    try {
+      // 1. 크레딧 사용 가능 여부 체크
+      final canUse = await canUseCreditsForRecipe();
+      if (!canUse) {
+        _needsCreditPurchase = true;
+        _setError('크레딧이 부족합니다. 크레딧을 구매하거나 무료 크레딧을 기다려주세요.');
+        notifyListeners();
+        return false;
+      }
+
+      // 2. 실제 크레딧 차감은 백엔드에서 처리되므로 여기서는 체크만
+      _needsCreditPurchase = false;
+      return true;
+    } catch (e) {
+      print('❌ 크레딧 확인/차감 실패: $e');
+      _setError('크레딧 확인 중 오류가 발생했습니다.');
+      return false;
+    }
+  }
+
   Future<bool> createRecipeFromAudio(String audioId) async {
     _setCreating(true);
     _clearError();
+    _needsCreditPurchase = false;
 
     try {
       print('🔍 RecipeProvider createRecipeFromAudio 시작: $audioId');
@@ -98,6 +135,11 @@ class RecipeProvider extends ChangeNotifier {
       // 오프라인에서는 레시피 생성 불가능
       if (await CacheService.isOffline()) {
         _setError('오프라인 상태에서는 새로운 레시피를 생성할 수 없습니다.');
+        return false;
+      }
+
+      // 크레딧 확인 및 차감
+      if (!await _checkAndDeductCredits()) {
         return false;
       }
       
@@ -149,6 +191,14 @@ class RecipeProvider extends ChangeNotifier {
   }) async {
     _setCreating(true);
     _clearError();
+    _needsCreditPurchase = false;
+
+    // 크레딧 확인 및 차감
+    if (!await _checkAndDeductCredits()) {
+      _setCreating(false);
+      return false;
+    }
+    _clearError();
 
     try {
       print('🔍 RecipeProvider createRecipe 시작: $title');
@@ -195,11 +245,57 @@ class RecipeProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateRecipe(String recipeId, Map<String, dynamic> updates) async {
+  Future<bool> updateRecipe(Recipe updatedRecipe) async {
     _clearError();
 
     try {
-      print('🔍 RecipeProvider updateRecipe 시작: $recipeId');
+      print('🔍 RecipeProvider updateRecipe 시작: ${updatedRecipe.id}');
+      
+      final recipeIndex = _recipes.indexWhere((recipe) => recipe.id == updatedRecipe.id);
+      if (recipeIndex == -1) {
+        _setError('레시피를 찾을 수 없습니다.');
+        return false;
+      }
+
+      // 오프라인에서는 레시피 수정 불가능
+      if (await CacheService.isOffline()) {
+        _setError('오프라인 상태에서는 레시피를 수정할 수 없습니다.');
+        return false;
+      }
+
+      final result = await _recipeService.updateRecipeWithObject(updatedRecipe);
+      
+      if (result.isSuccess && result.recipe != null) {
+        _recipes[recipeIndex] = result.recipe!;
+        if (_currentRecipe?.id == updatedRecipe.id) {
+          _currentRecipe = result.recipe!;
+        }
+        
+        // 수정된 레시피를 캐시에도 업데이트
+        await CacheService.addRecipeToCache(result.recipe!);
+        
+        print('✅ 레시피 수정 완료: ${result.recipe!.title}');
+        notifyListeners();
+        return true;
+      } else {
+        final errorMsg = result.message ?? '레시피 수정에 실패했습니다.';
+        print('❌ 레시피 수정 실패: $errorMsg');
+        _setError(errorMsg);
+        return false;
+      }
+    } catch (e) {
+      print('❌ RecipeProvider updateRecipe exception: $e');
+      _setError('레시피 수정 중 오류가 발생했습니다: $e');
+      return false;
+    }
+  }
+
+  // 기존 Map 방식도 호환성을 위해 유지
+  Future<bool> updateRecipeWithMap(String recipeId, Map<String, dynamic> updates) async {
+    _clearError();
+
+    try {
+      print('🔍 RecipeProvider updateRecipeWithMap 시작: $recipeId');
       
       final recipeIndex = _recipes.indexWhere((recipe) => recipe.id == recipeId);
       if (recipeIndex == -1) {
@@ -244,7 +340,7 @@ class RecipeProvider extends ChangeNotifier {
         return false;
       }
     } catch (e) {
-      print('❌ RecipeProvider updateRecipe exception: $e');
+      print('❌ RecipeProvider updateRecipeWithMap exception: $e');
       _setError('레시피 수정 중 오류가 발생했습니다: $e');
       return false;
     }

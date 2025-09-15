@@ -51,6 +51,71 @@ class RecipeStep {
   Map<String, dynamic> toJson() => _$RecipeStepToJson(this);
 }
 
+@HiveType(typeId: 4)
+enum RecipeVisibility {
+  @JsonValue('private')
+  @HiveField(0)
+  private,
+  @JsonValue('family')
+  @HiveField(1)
+  family,
+  @JsonValue('neighborhood')
+  @HiveField(2)
+  neighborhood,
+  @JsonValue('public')
+  @HiveField(3)
+  public,
+}
+
+@HiveType(typeId: 5)
+enum RecipeReactionType {
+  @JsonValue('warm')
+  @HiveField(0)
+  warm,
+  @JsonValue('delicious')
+  @HiveField(1)
+  delicious,
+  @JsonValue('nostalgic')
+  @HiveField(2)
+  nostalgic,
+  @JsonValue('familyLoved')
+  @HiveField(3)
+  familyLoved,
+  @JsonValue('wantToTry')
+  @HiveField(4)
+  wantToTry,
+}
+
+@JsonSerializable()
+@HiveType(typeId: 6)
+class RecipeReaction {
+  @HiveField(0)
+  final String id;
+  @JsonKey(name: 'recipe_id')
+  @HiveField(1)
+  final String recipeId;
+  @JsonKey(name: 'user_id')
+  @HiveField(2)
+  final String userId;
+  @HiveField(3)
+  final RecipeReactionType type;
+  @JsonKey(name: 'created_at')
+  @HiveField(4)
+  final DateTime createdAt;
+
+  const RecipeReaction({
+    required this.id,
+    required this.recipeId,
+    required this.userId,
+    required this.type,
+    required this.createdAt,
+  });
+
+  factory RecipeReaction.fromJson(Map<String, dynamic> json) => 
+      _$RecipeReactionFromJson(json);
+  Map<String, dynamic> toJson() => _$RecipeReactionToJson(this);
+}
+
 @JsonSerializable()
 @HiveType(typeId: 2)
 class Recipe {
@@ -90,6 +155,22 @@ class Recipe {
   @JsonKey(name: 'updated_at')
   @HiveField(14)
   final DateTime updatedAt;
+  
+  // 공유 시스템 관련 필드들
+  @HiveField(15)
+  final RecipeVisibility visibility;
+  @JsonKey(name: 'author_name')
+  @HiveField(16)
+  final String? authorName;
+  @JsonKey(name: 'reaction_counts')
+  @HiveField(17)
+  final Map<String, int>? reactionCounts;
+  @JsonKey(name: 'total_reactions')
+  @HiveField(18)
+  final int totalReactions;
+  @JsonKey(name: 'is_bookmarked')
+  @HiveField(19)
+  final bool isBookmarked;
 
   const Recipe({
     required this.id,
@@ -107,6 +188,11 @@ class Recipe {
     this.imageUrl,
     required this.createdAt,
     required this.updatedAt,
+    this.visibility = RecipeVisibility.private,
+    this.authorName,
+    this.reactionCounts,
+    this.totalReactions = 0,
+    this.isBookmarked = false,
   });
 
   factory Recipe.fromJson(Map<String, dynamic> json) => _$RecipeFromJson(json);
@@ -132,6 +218,20 @@ class Recipe {
     return category ?? '기타';
   }
 
+  String get visibilityDisplay {
+    switch (visibility) {
+      case RecipeVisibility.private:
+        return '🔒 나만 보기';
+      case RecipeVisibility.public:
+        return '🌍 모든 사용자';
+      default:
+        // family, neighborhood는 UI에 표시하지 않지만 기존 데이터 호환성을 위해 유지
+        return '🔒 나만 보기';
+    }
+  }
+
+  bool get isPublic => visibility == RecipeVisibility.public;
+
   Recipe copyWith({
     String? id,
     String? userId,
@@ -148,6 +248,11 @@ class Recipe {
     String? imageUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
+    RecipeVisibility? visibility,
+    String? authorName,
+    Map<String, int>? reactionCounts,
+    int? totalReactions,
+    bool? isBookmarked,
   }) {
     return Recipe(
       id: id ?? this.id,
@@ -165,6 +270,11 @@ class Recipe {
       imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      visibility: visibility ?? this.visibility,
+      authorName: authorName ?? this.authorName,
+      reactionCounts: reactionCounts ?? this.reactionCounts,
+      totalReactions: totalReactions ?? this.totalReactions,
+      isBookmarked: isBookmarked ?? this.isBookmarked,
     );
   }
 }

@@ -16,6 +16,9 @@ class CacheService {
   /// 캐시 서비스 초기화
   static Future<void> initialize() async {
     try {
+      // 스키마 변경으로 인한 기존 캐시 삭제
+      await _clearIncompatibleCache();
+      
       // Hive 어댑터 등록
       if (!Hive.isAdapterRegistered(0)) {
         Hive.registerAdapter(RecipeIngredientAdapter());
@@ -26,7 +29,16 @@ class CacheService {
       if (!Hive.isAdapterRegistered(2)) {
         Hive.registerAdapter(RecipeAdapter());
       }
-      if (!Hive.isAdapterRegistered(3)) {
+      if (!Hive.isAdapterRegistered(4)) {
+        Hive.registerAdapter(RecipeVisibilityAdapter());
+      }
+      if (!Hive.isAdapterRegistered(5)) {
+        Hive.registerAdapter(RecipeReactionTypeAdapter());
+      }
+      if (!Hive.isAdapterRegistered(6)) {
+        Hive.registerAdapter(RecipeReactionAdapter());
+      }
+      if (!Hive.isAdapterRegistered(7)) {
         Hive.registerAdapter(UserAdapter());
       }
 
@@ -38,6 +50,81 @@ class CacheService {
       print('✅ CacheService 초기화 완료');
     } catch (e) {
       print('❌ CacheService 초기화 실패: $e');
+      // 캐시 초기화 실패 시 모든 캐시를 강제로 삭제하고 재시도
+      await _forceClearAndRetry();
+    }
+  }
+
+  /// 호환되지 않는 기존 캐시 삭제
+  static Future<void> _clearIncompatibleCache() async {
+    try {
+      // 스키마 버전 확인
+      final settingsBox = await Hive.openBox('settings');
+      final int? schemaVersion = settingsBox.get('schema_version');
+      const int currentSchemaVersion = 2; // RecipeVisibility 추가로 버전 업
+      
+      if (schemaVersion == null || schemaVersion < currentSchemaVersion) {
+        print('🔄 스키마 변경 감지 - 기존 캐시 삭제 중...');
+        
+        // 기존 박스들 삭제
+        await Hive.deleteBoxFromDisk(_recipesBoxName);
+        await Hive.deleteBoxFromDisk(_userBoxName);
+        
+        // 스키마 버전 업데이트
+        await settingsBox.put('schema_version', currentSchemaVersion);
+        print('✅ 기존 캐시 삭제 및 스키마 버전 업데이트 완료');
+      }
+      
+      await settingsBox.close();
+    } catch (e) {
+      print('⚠️ 캐시 삭제 중 오류 (무시): $e');
+    }
+  }
+
+  /// 강제 캐시 삭제 및 재시도
+  static Future<void> _forceClearAndRetry() async {
+    try {
+      print('🔄 강제 캐시 삭제 후 재시도...');
+      
+      // 모든 박스 강제 삭제
+      await Hive.deleteBoxFromDisk(_recipesBoxName);
+      await Hive.deleteBoxFromDisk(_userBoxName);
+      await Hive.deleteBoxFromDisk(_settingsBoxName);
+      
+      // 어댑터 등록
+      if (!Hive.isAdapterRegistered(0)) {
+        Hive.registerAdapter(RecipeIngredientAdapter());
+      }
+      if (!Hive.isAdapterRegistered(1)) {
+        Hive.registerAdapter(RecipeStepAdapter());
+      }
+      if (!Hive.isAdapterRegistered(2)) {
+        Hive.registerAdapter(RecipeAdapter());
+      }
+      if (!Hive.isAdapterRegistered(4)) {
+        Hive.registerAdapter(RecipeVisibilityAdapter());
+      }
+      if (!Hive.isAdapterRegistered(5)) {
+        Hive.registerAdapter(RecipeReactionTypeAdapter());
+      }
+      if (!Hive.isAdapterRegistered(6)) {
+        Hive.registerAdapter(RecipeReactionAdapter());
+      }
+      if (!Hive.isAdapterRegistered(7)) {
+        Hive.registerAdapter(UserAdapter());
+      }
+      
+      // 박스 다시 열기
+      _recipesBox = await Hive.openBox<Recipe>(_recipesBoxName);
+      _userBox = await Hive.openBox<User>(_userBoxName);
+      _settingsBox = await Hive.openBox(_settingsBoxName);
+      
+      // 스키마 버전 설정
+      await _settingsBox!.put('schema_version', 2);
+      
+      print('✅ 강제 캐시 삭제 후 재초기화 완료');
+    } catch (e) {
+      print('❌ 강제 캐시 삭제 후 재시도 실패: $e');
       rethrow;
     }
   }

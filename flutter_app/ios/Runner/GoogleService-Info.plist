@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.momento.momentoApp</string>
+	<string>com.pizzastudio.momentoApp</string>
 	<key>PROJECT_ID</key>
 	<string>momento-app-66cbd</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:387076489688:ios:7de95b7fd5377bef7ef2ad</string>
+	<string>1:387076489688:ios:62a46a8e434d790b7ef2ad</string>
 </dict>
 </plist>

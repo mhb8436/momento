@@ -33,8 +33,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildPrivacySection(),
-                      const SizedBox(height: 32),
+                      // _buildPrivacySection(),
+                      // const SizedBox(height: 32),
                       _buildDataSection(),
                       const SizedBox(height: 32),
                       _buildAccountSection(),
@@ -127,20 +127,6 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     return _buildSection(
       title: '데이터 관리',
       children: [
-        _buildActionTile(
-          icon: Icons.download,
-          title: '내 데이터 다운로드',
-          subtitle: '저장된 레시피와 음성 파일 내보내기',
-          onTap: _downloadMyData,
-        ),
-        _buildActionTile(
-          icon: Icons.delete_forever,
-          title: '데이터 삭제 요청',
-          subtitle: '모든 개인 데이터 영구 삭제',
-          onTap: _requestDataDeletion,
-          textColor: AppTheme.errorColor,
-          iconColor: AppTheme.errorColor,
-        ),
       ],
     );
   }
@@ -155,12 +141,6 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           subtitle: '계정 보안을 위해 정기적으로 변경하세요',
           onTap: _changePassword,
         ),
-        // _buildActionTile(
-        //   icon: Icons.person_off,
-        //   title: '계정 비활성화',
-        //   subtitle: '일시적으로 계정을 비활성화',
-        //   onTap: _deactivateAccount,
-        // ),
         _buildActionTile(
           icon: Icons.delete_outline,
           title: '계정 삭제',
@@ -356,69 +336,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     );
   }
 
-  void _downloadMyData() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('데이터 다운로드'),
-        content: const Text(
-          '저장된 레시피와 음성 파일을 ZIP 파일로 다운로드합니다.\n'
-          '데이터 양에 따라 시간이 소요될 수 있습니다.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('데이터 다운로드가 시작되었습니다. 완료되면 알림을 받으실 수 있습니다.'),
-                  backgroundColor: AppTheme.primaryColor,
-                ),
-              );
-            },
-            child: const Text('다운로드'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _requestDataDeletion() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('데이터 삭제 요청'),
-        content: const Text(
-          '모든 개인 데이터를 영구적으로 삭제합니다.\n'
-          '이 작업은 되돌릴 수 없습니다.\n\n'
-          '정말로 진행하시겠습니까?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('데이터 삭제 요청이 접수되었습니다. 7일 내에 처리됩니다.'),
-                  backgroundColor: AppTheme.errorColor,
-                ),
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
-            child: const Text('삭제 요청'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _changePassword() {
     Navigator.push(
@@ -429,36 +347,6 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     );
   }
 
-  void _deactivateAccount() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('계정 비활성화'),
-        content: const Text(
-          '계정을 일시적으로 비활성화합니다.\n'
-          '언제든지 다시 로그인하여 활성화할 수 있습니다.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('계정 비활성화 기능이 구현될 예정입니다.'),
-                  backgroundColor: AppTheme.primaryColor,
-                ),
-              );
-            },
-            child: const Text('비활성화'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _deleteAccount() {
     Navigator.push(

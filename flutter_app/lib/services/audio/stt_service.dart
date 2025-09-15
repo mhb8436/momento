@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 class STTService {
@@ -11,6 +12,7 @@ class STTService {
   bool _isInitialized = false;
   bool _isListening = false;
   String _recognizedWords = '';
+  String _currentLocaleId = 'ko_KR'; // Default to Korean
   
   // Stream controllers for real-time updates
   final StreamController<String> _transcriptController = StreamController<String>.broadcast();
@@ -91,13 +93,13 @@ class STTService {
         return false;
       }
       
-      // listen 시작 - 더 간단한 설정으로
+      // listen 시작 - 현재 설정된 로케일 사용
       final available = await _speechToText.listen(
         onResult: _onResult,
         listenFor: const Duration(seconds: 30), // 30초로 단축
         pauseFor: const Duration(seconds: 2),   // 2초로 단축
         partialResults: true,
-        localeId: 'ko_KR',
+        localeId: _currentLocaleId,
         cancelOnError: false,
         listenMode: ListenMode.confirmation,
       );
@@ -229,11 +231,50 @@ class STTService {
   Future<String> getModelInfo() async {
     if (_isInitialized) {
       final locales = await getAvailableLocales();
-      final koreanLocale = locales.where((locale) => locale.localeId == 'ko_KR').first;
-      return 'Speech-to-Text (${koreanLocale.name})';
+      final currentLocale = locales.where((locale) => locale.localeId == _currentLocaleId).firstOrNull;
+      if (currentLocale != null) {
+        return 'Speech-to-Text (${currentLocale.name})';
+      }
     }
     return 'Speech-to-Text (초기화 필요)';
   }
+
+  /// Set the speech recognition locale
+  void setLocale(Locale locale) {
+    // Convert Flutter Locale to STT locale format
+    switch (locale.languageCode) {
+      case 'ko':
+        _currentLocaleId = 'ko_KR';
+        break;
+      case 'en':
+        _currentLocaleId = 'en_US';
+        break;
+      case 'ja':
+        _currentLocaleId = 'ja_JP';
+        break;
+      case 'es':
+        _currentLocaleId = 'es_ES';
+        break;
+      default:
+        // Default to Korean if unsupported locale
+        _currentLocaleId = 'ko_KR';
+        break;
+    }
+    debugPrint('🌐 STT 언어 설정 변경: $_currentLocaleId');
+  }
+
+  /// Get supported locales for the app
+  static List<Locale> getSupportedLocales() {
+    return [
+      const Locale('ko', 'KR'),
+      const Locale('en', 'US'),
+      const Locale('ja', 'JP'),
+      const Locale('es', 'ES'),
+    ];
+  }
+
+  /// Get current locale
+  String get currentLocaleId => _currentLocaleId;
 
   /// Check if STT service is ready
   bool get isReady => _isInitialized;

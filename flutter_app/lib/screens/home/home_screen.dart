@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/recipe_provider.dart';
+import '../../providers/credit_provider.dart';
 import '../../widgets/common/custom_icon_button.dart';
 import '../recording/recording_screen.dart';
 import '../ocr/ocr_screen.dart';
@@ -10,6 +12,8 @@ import '../recipe/recipe_list_screen.dart';
 import '../recipe/recipe_create_screen.dart';
 import '../recipe/recipe_detail_screen.dart';
 import '../profile/profile_screen.dart';
+import '../community/community_screen.dart';
+import '../../widgets/credit/credit_status_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<RecipeProvider>().loadRecipes();
+      context.read<CreditProvider>().initialize();
     });
   }
 
@@ -78,10 +83,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               Consumer<AuthProvider>(
                 builder: (context, authProvider, _) {
                   final user = authProvider.user;
+                  final l10n = AppLocalizations.of(context)!;
                   return Text(
                     user?.fullName?.isNotEmpty == true
-                        ? '안녕하세요, ${user!.fullName}님!'
-                        : '안녕하세요!',
+                        ? l10n.greetingWithName(user!.fullName!)
+                        : l10n.greetingDefault,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimary,
@@ -93,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               Row(
                 children: [
                   Text(
-                    '오늘은 어떤 요리를 기록해볼까요?',
+                    AppLocalizations.of(context)!.todayQuestion,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppTheme.textSecondary,
                     ),
@@ -119,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '오프라인',
+                                AppLocalizations.of(context)!.offline,
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: Colors.orange,
                                   fontSize: 10,
@@ -156,6 +162,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       case 2:
         return _buildCreateTab();
       case 3:
+        return _buildCommunityTab();
+      case 4:
         return _buildProfileTab();
       default:
         return _buildHomeTab();
@@ -168,6 +176,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const CreditStatusWidget(),
+          const SizedBox(height: 20),
           _buildQuickActions(),
           const SizedBox(height: 32),
           _buildRecentRecipes(),
@@ -197,7 +207,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '빠른 시작',
+            AppLocalizations.of(context)!.quickStart,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
@@ -209,8 +219,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               // First row: 음성 녹음 카드 (전체 너비)
               _buildQuickActionCard(
                 icon: Icons.mic,
-                title: '음성 녹음',
-                subtitle: '새로운 레시피를 음성으로 기록하세요',
+                title: AppLocalizations.of(context)!.voiceRecording,
+                subtitle: AppLocalizations.of(context)!.newRecipeVoice,
                 gradient: AppTheme.primaryGradient,
                 onTap: () {
                   Navigator.push(
@@ -229,8 +239,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   Expanded(
                     child: _buildQuickActionCard(
                       icon: Icons.document_scanner,
-                      title: 'OCR 스캔',
-                      subtitle: '이미지에서 레시피 추출',
+                      title: AppLocalizations.of(context)!.ocrScan,
+                      subtitle: AppLocalizations.of(context)!.extractFromImage,
                       gradient: const LinearGradient(
                         colors: [Color(0xFF6C63FF), Color(0xFF9C88FF)],
                       ),
@@ -248,8 +258,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   Expanded(
                     child: _buildQuickActionCard(
                       icon: Icons.library_books,
-                      title: '내 레시피',
-                      subtitle: '저장된 레시피 보기',
+                      title: AppLocalizations.of(context)!.myRecipes,
+                      subtitle: AppLocalizations.of(context)!.viewSavedRecipes,
                       gradient: const LinearGradient(
                         colors: [AppTheme.secondaryColor, Color(0xFF26D0CE)],
                       ),
@@ -364,7 +374,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '최근 레시피',
+                  AppLocalizations.of(context)!.recentRecipes,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppTheme.textPrimary,
@@ -377,7 +387,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     });
                   },
                   child: Text(
-                    '모두 보기',
+                    AppLocalizations.of(context)!.viewAll,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppTheme.primaryColor,
                       fontWeight: FontWeight.w600,
@@ -403,14 +413,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      '아직 레시피가 없어요',
+                      AppLocalizations.of(context)!.noRecipesYet,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: AppTheme.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '첫 번째 요리 레시피를 녹음해보세요!',
+                      AppLocalizations.of(context)!.recordFirstRecipe,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppTheme.textLight,
                       ),
@@ -523,7 +533,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '나의 요리 기록',
+            AppLocalizations.of(context)!.myCookingRecord,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
@@ -537,7 +547,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   Expanded(
                     child: _buildStatCard(
                       icon: Icons.restaurant_menu,
-                      title: '총 레시피',
+                      title: AppLocalizations.of(context)!.totalRecipes,
                       value: '${recipeProvider.recipes.length}',
                       color: AppTheme.primaryColor,
                     ),
@@ -546,7 +556,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   Expanded(
                     child: _buildStatCard(
                       icon: Icons.mic,
-                      title: '녹음 파일',
+                      title: AppLocalizations.of(context)!.recordingFiles,
                       value: '0', // TODO: Get from AudioProvider
                       color: AppTheme.secondaryColor,
                     ),
@@ -555,7 +565,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   Expanded(
                     child: _buildStatCard(
                       icon: Icons.favorite,
-                      title: '즐겨찾기',
+                      title: AppLocalizations.of(context)!.favorites,
                       value: '0', // TODO: Implement favorites
                       color: AppTheme.accentColor,
                     ),
@@ -617,6 +627,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return const RecipeCreateScreen();
   }
 
+  Widget _buildCommunityTab() {
+    return const CommunityScreen();
+  }
+
   Widget _buildProfileTab() {
     return ProfileScreen(
       onTabChange: (index) {
@@ -661,26 +675,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           fontWeight: FontWeight.normal,
           color: AppTheme.textLight,
         ),
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: '홈',
+            icon: const Icon(Icons.home_outlined),
+            activeIcon: const Icon(Icons.home),
+            label: AppLocalizations.of(context)!.home,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.restaurant_menu_outlined),
-            activeIcon: Icon(Icons.restaurant_menu),
-            label: '레시피',
+            icon: const Icon(Icons.restaurant_menu_outlined),
+            activeIcon: const Icon(Icons.restaurant_menu),
+            label: AppLocalizations.of(context)!.recipes,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            activeIcon: Icon(Icons.add_circle),
-            label: '작성',
+            icon: const Icon(Icons.add_circle_outline),
+            activeIcon: const Icon(Icons.add_circle),
+            label: AppLocalizations.of(context)!.createRecipe,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outlined),
-            activeIcon: Icon(Icons.person),
-            label: '프로필',
+            icon: const Icon(Icons.people_outline),
+            activeIcon: const Icon(Icons.people),
+            label: AppLocalizations.of(context)!.community,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.person_outlined),
+            activeIcon: const Icon(Icons.person),
+            label: AppLocalizations.of(context)!.profile,
           ),
         ],
       ),
@@ -701,17 +720,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           children: [
             ListTile(
               leading: const Icon(Icons.settings),
-              title: const Text('설정'),
+              title: Text(AppLocalizations.of(context)!.settings),
               onTap: () {
                 Navigator.pop(context);
                 setState(() {
-                  _currentIndex = 3; // Navigate to Profile tab where settings are
+                  _currentIndex = 4; // Navigate to Profile tab where settings are
                 });
               },
             ),
             ListTile(
               leading: const Icon(Icons.help_outline),
-              title: const Text('도움말'),
+              title: Text(AppLocalizations.of(context)!.help),
               onTap: () {
                 Navigator.pop(context);
                 _showHelpDialog();
@@ -719,7 +738,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
             ListTile(
               leading: const Icon(Icons.logout, color: AppTheme.errorColor),
-              title: const Text('로그아웃', style: TextStyle(color: AppTheme.errorColor)),
+              title: Text(AppLocalizations.of(context)!.logout, style: const TextStyle(color: AppTheme.errorColor)),
               onTap: () {
                 Navigator.pop(context);
                 _showLogoutDialog();
@@ -735,19 +754,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('로그아웃'),
-        content: const Text('정말로 로그아웃하시겠습니까?'),
+        title: Text(AppLocalizations.of(context)!.logoutDialog),
+        content: Text(AppLocalizations.of(context)!.logoutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               context.read<AuthProvider>().logout();
             },
-            child: const Text('로그아웃', style: TextStyle(color: AppTheme.errorColor)),
+            child: Text(AppLocalizations.of(context)!.logout, style: const TextStyle(color: AppTheme.errorColor)),
           ),
         ],
       ),

@@ -1,0 +1,254 @@
+{
+  "@@locale": "ja",
+  
+  "appTitle": "MOMENTO",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  
+  "appSubtitle": "お母さんのレシピを音声とAIで記録しましょう",
+  "@appSubtitle": {
+    "description": "App subtitle for onboarding"
+  },
+
+  "login": "ログイン",
+  "signup": "サインアップ",
+  "email": "メールアドレス",
+  "password": "パスワード",
+  "confirmPassword": "パスワード確認",
+  "forgotPassword": "パスワードをお忘れですか？",
+  "loginButton": "ログイン",
+  "signupButton": "アカウント作成",
+  "alreadyHaveAccount": "すでにアカウントをお持ちですか？",
+  "dontHaveAccount": "アカウントをお持ちでないですか？",
+  
+  "enterEmail": "メールアドレスを入力してください",
+  "enterPassword": "パスワードを入力してください",
+  "invalidEmail": "正しいメールアドレスを入力してください",
+  "passwordTooShort": "パスワードは6文字以上である必要があります",
+  "passwordsNotMatch": "パスワードが一致しません",
+  
+  "home": "ホーム",
+  "recipes": "レシピ",
+  "profile": "プロフィール",
+  "settings": "設定",
+  
+  "createRecipe": "レシピ作成",
+  "recordVoice": "音声で記録",
+  "recordVoiceSubtitle": "料理の過程を話していただければ\\nAIが構造化されたレシピに整理します",
+  "scanImage": "画像スキャン",
+  "scanImageSubtitle": "写真からテキストを\\n抽出する",
+  "textInput": "テキスト入力",
+  "textInputSubtitle": "メモ・メッセージを\\n直接入力",
+  "urlInput": "URL入力",
+  "urlInputSubtitle": "YouTube・ブログ\\nリンクから抽出",
+  
+  "startRecording": "録音開始",
+  "stopRecording": "録音停止",
+  "processing": "処理中...",
+  "cancel": "キャンセル",
+  "save": "保存",
+  "delete": "削除",
+  "edit": "編集",
+  "share": "共有",
+  
+  "voiceRecognition": "音声認識",
+  "listening": "音声を聞いています...",
+  "waitingForVoice": "音声入力を待機しています",
+  "tapToStartRecording": "マイクボタンを押して開始してください",
+  "speakCookingInstructions": "料理法を明確に話してください",
+  "includeIngredientsAndSteps": "材料、調理過程、コツを含めてください",
+  
+  "credits": "クレジット",
+  "creditsRequired": "クレジット必要",
+  "creditsRequiredMessage": "{action}には1クレジットが必要です。",
+  "@creditsRequiredMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "currentCredits": "現在のクレジット",
+  "insufficientCredits": "クレジット不足",
+  "creditShortage": "クレジットが不足しています。クレジットを購入するか、無料クレジットをお待ちください。",
+  "freeCreditsRemaining": "残り無料クレジット{count}個（今日）",
+  "@freeCreditsRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "creditStore": "クレジットストア",
+  "purchaseCredits": "クレジット購入",
+  "creditPackages": "クレジットパッケージ",
+  "autoRechargeSubscriptions": "自動充電サブスクリプション",
+  
+  "starterPackage": "スターターパッケージ",
+  "familyPackage": "ファミリーパッケージ", 
+  "premiumPackage": "プレミアムパッケージ",
+  "monthlyAutoRecharge": "月間自動充電",
+  "yearlyAutoRecharge": "年間自動充電",
+  
+  "creditsAmount": "{count}クレジット",
+  "@creditsAmount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "price": "{amount}",
+  "@price": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "creditStoreInfo": "クレジットストア案内",
+  "creditStoreDescription": "クレジットを使用してAIレシピ生成サービスをご利用ください。\\n\\n📝 利用料金：\\n• レシピ生成：{recipeGenCost}クレジット\\n• レシピ改善：{recipeImproveCost}クレジット\\n\\n🎁 無料特典：\\n• 新規登録：{initialCredits}クレジット\\n• 毎日{dailyCredits}クレジット無料\\n\\n⭐ 自動充電サービス：\\n• 月間50クレジット自動充電：¥990（月）\\n• 年間100クレジット自動充電：¥9,900（年）\\n• 便利な自動充電利用",
+  "@creditStoreDescription": {
+    "placeholders": {
+      "recipeGenCost": {"type": "int"},
+      "recipeImproveCost": {"type": "int"},
+      "initialCredits": {"type": "int"},
+      "dailyCredits": {"type": "int"}
+    }
+  },
+  
+  "autoRechargeEnabled": "自動充電有効",
+  "useCredit": "クレジット使用",
+  "useFreeCredit": "無料クレジット使用（今日{count}個残り）",
+  "@useFreeCredit": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "usePaidCredit": "有料クレジット使用",
+  "balanceAfterUse": "使用後残高：{balance}クレジット",
+  "@balanceAfterUse": {
+    "placeholders": {
+      "balance": {"type": "int"}
+    }
+  },
+  
+  "recipeCreated": "🎉 レシピが正常に作成されました！",
+  "processingTranscript": "音声を分析してレシピを生成中です...",
+  "processingCharacters": "{count}文字のコンテンツを処理中です。",
+  "@processingCharacters": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  
+  "offlineMode": "オフラインモード",
+  "offlineRecipeCreation": "オフライン状態では新しいレシピを作成できません。",
+  "offlineVoiceRecognition": "音声認識はオンラインでのみ利用できます。",
+  
+  "error": "エラー",
+  "success": "成功",
+  "loading": "読み込み中...",
+  "retry": "再試行",
+  "confirm": "確認",
+  "close": "閉じる",
+  
+  "recipeTitle": "レシピタイトル",
+  "ingredients": "材料",
+  "instructions": "作り方",
+  "cookingTime": "調理時間",
+  "servings": "人分",
+  "difficulty": "難易度",
+  "tags": "タグ",
+  "tips": "コツ",
+  
+  "easy": "簡単",
+  "medium": "普通",
+  "hard": "難しい",
+  
+  "minutes": "分",
+  "hours": "時間",
+  "servingsCount": "{count}人分",
+  "@servingsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "greetingWithName": "こんにちは、{name}さん！",
+  "@greetingWithName": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "greetingDefault": "こんにちは！",
+  "todayQuestion": "今日はどんな料理を記録しましょうか？",
+  "offline": "オフライン",
+  
+  "quickStart": "クイックスタート",
+  "voiceRecording": "音声録音",
+  "newRecipeVoice": "新しいレシピを音声で記録してください",
+  "ocrScan": "OCRスキャン",
+  "extractFromImage": "画像からレシピを抽出",
+  "myRecipes": "私のレシピ",
+  "viewSavedRecipes": "保存されたレシピを表示",
+  
+  "recentRecipes": "最近のレシピ",
+  "viewAll": "すべて表示",
+  "noRecipesYet": "まだレシピがありません",
+  "recordFirstRecipe": "初めての料理レシピを録音してみましょう！",
+  
+  "myCookingRecord": "私の料理記録",
+  "totalRecipes": "総レシピ数",
+  "recordingFiles": "録音ファイル",
+  "favorites": "お気に入り",
+  
+  "community": "コミュニティ",
+  "help": "ヘルプ",
+  "logout": "ログアウト",
+  "logoutConfirm": "本当にログアウトしますか？",
+  "logoutDialog": "ログアウト",
+
+  "offlineRecognition": "オフライン状態です。音声認識はオンラインでのみ利用できます。",
+  "recognizing": "認識中",
+  "waiting": "待機中",
+  "accumulatedContent": "累積された内容（{count}文字）",
+  "@accumulatedContent": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "initialize": "初期化",
+  "currentlyRecognizing": "現在認識中",
+  "waitingForVoice": "音声入力待機",
+  "listeningToVoice": "音声を聞いています...",
+  "startVoiceRecognition": "音壵認識ボタンを押して始めてください",
+  "speakRecipeDetails": "レシピの詳細を話してください",
+  "startVoiceRecognitionPrompt": "音壷認識を開始",
+  "includeIngredientsAndStepsLong": "材料、調理手順、コツなどを含めて話してください",
+  "allowMicrophonePermission": "マイク権限を許可し、認識ボタンを押してください",
+  "createRecipeButton": "レシピ\n作成",
+  "moreInstructionsVoice": "さらに追加するには音壷認識ボタンを、完了するにはレシピ作成ボタンを押してください",
+  "moreInstructionsVoiceAgain": "さらに追加するには音壵認識ボタンを再び押してください",
+  "processingAndGenerating": "音壷を分析してレシピを生成中です...",
+  "processingCharactersCount": "合計{count}文字のコンテンツを処理中です。",
+  "@processingCharactersCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "creatingAccount": "アカウントを作成中です...",
+  "createAccount": "アカウント作成",
+  "signupSubtitle": "MOMENTOで大切なレシピを記録して共有しましょう",
+  "nameOptional": "お名前（任意）",
+  "enterName": "お名前を入力してください",
+  "nameTooShort": "名前は2文字以上で入力してください",
+  "signupSuccess": "アカウントが正常に作成されました！",
+  "signupFailed": "アカウント作成に失敗しました。",
+  "termsAndPrivacy": "サインアップすることで、利用規約および\nプライバシーポリシーに同意したことになります。"
+}

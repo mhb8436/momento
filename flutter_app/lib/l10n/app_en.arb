@@ -1,0 +1,254 @@
+{
+  "@@locale": "en",
+  
+  "appTitle": "MOMENTO",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  
+  "appSubtitle": "Capture Mom's Recipes with Voice & AI",
+  "@appSubtitle": {
+    "description": "App subtitle for onboarding"
+  },
+
+  "login": "Login",
+  "signup": "Sign Up",
+  "email": "Email",
+  "password": "Password",
+  "confirmPassword": "Confirm Password",
+  "forgotPassword": "Forgot Password?",
+  "loginButton": "Sign In",
+  "signupButton": "Create Account",
+  "alreadyHaveAccount": "Already have an account?",
+  "dontHaveAccount": "Don't have an account?",
+  
+  "enterEmail": "Please enter your email address",
+  "enterPassword": "Please enter your password",
+  "invalidEmail": "Please enter a valid email address",
+  "passwordTooShort": "Password must be at least 6 characters",
+  "passwordsNotMatch": "Passwords do not match",
+  
+  "home": "Home",
+  "recipes": "Recipes",
+  "profile": "Profile",
+  "settings": "Settings",
+  
+  "createRecipe": "Create Recipe",
+  "recordVoice": "Record with Voice",
+  "recordVoiceSubtitle": "Tell us about your cooking process\nand AI will organize it into a structured recipe",
+  "scanImage": "Scan Image",
+  "scanImageSubtitle": "Extract text\nfrom photo",
+  "textInput": "Text Input",
+  "textInputSubtitle": "Enter notes/messages\ndirectly",
+  "urlInput": "URL Input",
+  "urlInputSubtitle": "Extract from YouTube\n/blog links",
+  
+  "startRecording": "Start Recording",
+  "stopRecording": "Stop Recording",
+  "processing": "Processing...",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "share": "Share",
+  
+  "voiceRecognition": "Voice Recognition",
+  "listening": "Listening to voice...",
+  "waitingForVoice": "Waiting for voice input",
+  "tapToStartRecording": "Tap the microphone button to start",
+  "speakCookingInstructions": "Please speak your cooking instructions clearly",
+  "includeIngredientsAndSteps": "Include ingredients, cooking steps, and tips",
+  
+  "credits": "Credits",
+  "creditsRequired": "Credits Required",
+  "creditsRequiredMessage": "{action} requires 1 credit.",
+  "@creditsRequiredMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "currentCredits": "Current Credits",
+  "insufficientCredits": "Insufficient Credits",
+  "creditShortage": "Not enough credits. Please purchase credits or wait for daily free credits.",
+  "freeCreditsRemaining": "{count} free credits remaining (today)",
+  "@freeCreditsRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "creditStore": "Credit Store",
+  "purchaseCredits": "Purchase Credits",
+  "creditPackages": "Credit Packages",
+  "autoRechargeSubscriptions": "Auto-recharge Subscriptions",
+  
+  "starterPackage": "Starter Package",
+  "familyPackage": "Family Package", 
+  "premiumPackage": "Premium Package",
+  "monthlyAutoRecharge": "Monthly Auto-recharge",
+  "yearlyAutoRecharge": "Yearly Auto-recharge",
+  
+  "creditsAmount": "{count} credits",
+  "@creditsAmount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "price": "{amount}",
+  "@price": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "creditStoreInfo": "Credit Store Guide",
+  "creditStoreDescription": "Use credits to access AI recipe generation service.\n\n📝 Usage Fees:\n• Recipe generation: {recipeGenCost} credit\n• Recipe improvement: {recipeImproveCost} credit\n\n🎁 Free Benefits:\n• New signup: {initialCredits} credits\n• Daily {dailyCredits} free credits\n\n⭐ Auto-recharge Service:\n• Monthly 50 credits auto-recharge: ₩9,900 (month)\n• Yearly 100 credits auto-recharge: ₩99,900 (year)\n• Convenient auto-recharge usage",
+  "@creditStoreDescription": {
+    "placeholders": {
+      "recipeGenCost": {"type": "int"},
+      "recipeImproveCost": {"type": "int"},
+      "initialCredits": {"type": "int"},
+      "dailyCredits": {"type": "int"}
+    }
+  },
+  
+  "autoRechargeEnabled": "Auto-recharge enabled",
+  "useCredit": "Use Credit",
+  "useFreeCredit": "Use free credit ({count} remaining today)",
+  "@useFreeCredit": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "usePaidCredit": "Use paid credit",
+  "balanceAfterUse": "Balance after use: {balance} credits",
+  "@balanceAfterUse": {
+    "placeholders": {
+      "balance": {"type": "int"}
+    }
+  },
+  
+  "recipeCreated": "🎉 Recipe created successfully!",
+  "processingTranscript": "Analyzing voice and generating recipe...",
+  "processingCharacters": "Processing {count} characters of content.",
+  "@processingCharacters": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  
+  "offlineMode": "Offline mode",
+  "offlineRecipeCreation": "Cannot create new recipes while offline.",
+  "offlineVoiceRecognition": "Voice recognition is only available online.",
+  
+  "error": "Error",
+  "success": "Success",
+  "loading": "Loading...",
+  "retry": "Retry",
+  "confirm": "Confirm",
+  "close": "Close",
+  
+  "recipeTitle": "Recipe Title",
+  "ingredients": "Ingredients",
+  "instructions": "Instructions",
+  "cookingTime": "Cooking Time",
+  "servings": "Servings",
+  "difficulty": "Difficulty",
+  "tags": "Tags",
+  "tips": "Tips",
+  
+  "easy": "Easy",
+  "medium": "Medium",
+  "hard": "Hard",
+  
+  "minutes": "minutes",
+  "hours": "hours",
+  "servingsCount": "{count} servings",
+  "@servingsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "greetingWithName": "Hello, {name}!",
+  "@greetingWithName": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "greetingDefault": "Hello!",
+  "todayQuestion": "What dish would you like to record today?",
+  "offline": "Offline",
+  
+  "quickStart": "Quick Start",
+  "voiceRecording": "Voice Recording",
+  "newRecipeVoice": "Record a new recipe with voice",
+  "ocrScan": "OCR Scan",
+  "extractFromImage": "Extract recipe from image",
+  "myRecipes": "My Recipes",
+  "viewSavedRecipes": "View saved recipes",
+  
+  "recentRecipes": "Recent Recipes",
+  "viewAll": "View All",
+  "noRecipesYet": "No recipes yet",
+  "recordFirstRecipe": "Record your first cooking recipe!",
+  
+  "myCookingRecord": "My Cooking Record",
+  "totalRecipes": "Total Recipes",
+  "recordingFiles": "Recording Files",
+  "favorites": "Favorites",
+  
+  "community": "Community",
+  "help": "Help",
+  "logout": "Logout",
+  "logoutConfirm": "Are you sure you want to logout?",
+  "logoutDialog": "Logout",
+
+  "offlineRecognition": "You are offline. Voice recognition is only available online.",
+  "recognizing": "Recognizing",
+  "waiting": "Waiting",
+  "accumulatedContent": "Accumulated content ({count} characters)",
+  "@accumulatedContent": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "initialize": "Initialize",
+  "currentlyRecognizing": "Currently recognizing",
+  "waitingForVoice": "Waiting for voice input",
+  "listeningToVoice": "Listening to voice...",
+  "startVoiceRecognition": "Press the voice recognition button to start",
+  "speakRecipeDetails": "Please speak your recipe details",
+  "startVoiceRecognitionPrompt": "Start voice recognition",
+  "includeIngredientsAndStepsLong": "Please include ingredients, cooking steps, tips, etc.",
+  "allowMicrophonePermission": "Please allow microphone permission and press the recognition button",
+  "createRecipeButton": "Create\nRecipe",
+  "moreInstructionsVoice": "Press voice recognition button to add more, or create recipe button to finish",
+  "moreInstructionsVoiceAgain": "Press voice recognition button again to add more",
+  "processingAndGenerating": "Analyzing voice and generating recipe...",
+  "processingCharactersCount": "Processing {count} characters of content.",
+  "@processingCharactersCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "creatingAccount": "Creating account...",
+  "createAccount": "Create Account",
+  "signupSubtitle": "Record and share precious recipes with MOMENTO",
+  "nameOptional": "Name (Optional)",
+  "enterName": "Please enter your name",
+  "nameTooShort": "Name must be at least 2 characters",
+  "signupSuccess": "Account created successfully!",
+  "signupFailed": "Failed to create account.",
+  "termsAndPrivacy": "By signing up, you agree to our Terms of Service and\nPrivacy Policy."
+}

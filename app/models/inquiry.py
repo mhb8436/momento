@@ -16,13 +16,8 @@ class InquiryStatus(str, enum.Enum):
 
 class InquiryCategory(str, enum.Enum):
     GENERAL = "general"
-    BUG = "bug"
-    FEATURE = "feature"
-    ACCOUNT = "account"
-    RECIPE = "recipe"
-    AUDIO = "audio"
-    UI = "ui"
-    PERFORMANCE = "performance"
+    PROBLEM = "problem"
+    SUGGESTION = "suggestion"
 
 
 class Inquiry(Base):
